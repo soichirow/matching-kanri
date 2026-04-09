@@ -20,10 +20,31 @@
   --warning:   #f9a825;
   --danger:    #ef5350;
   --text:      #e2e4f0;
-  --text-dim:  #6b6e8a;
+  --text-dim:  #8b8eaa;
   --radius:    10px;
   --shadow:    0 4px 12px rgba(0,0,0,0.5);
+  --shadow-overlay: rgba(0,0,0,0.65);
+  --shadow-strong:  rgba(0,0,0,0.7);
 }
+
+[data-theme="light"] {
+  --bg:        #f0f1f5;
+  --surface:   #ffffff;
+  --surface2:  #e8e9f0;
+  --border:    #d0d1da;
+  --accent:    #6b5ce7;
+  --accent2:   #0288d1;
+  --success:   #2e8b57;
+  --warning:   #e68a00;
+  --danger:    #d32f2f;
+  --text:      #1a1b2e;
+  --text-dim:  #5a5d75;
+  --shadow:    0 4px 12px rgba(0,0,0,0.1);
+  --shadow-overlay: rgba(0,0,0,0.35);
+  --shadow-strong:  rgba(0,0,0,0.15);
+}
+[data-theme="light"] .room-obj { border-color: rgba(0,0,0,0.18); }
+[data-theme="light"] .room-obj:hover { border-color: rgba(0,0,0,0.4); }
 
 html, body { height: 100%; overflow: hidden; }
 
@@ -113,8 +134,8 @@ body {
 .player-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 8px;
+  gap: 6px;
+  padding: 7px 8px;
   border-radius: 7px;
   margin-bottom: 3px;
   background: var(--surface2);
@@ -156,8 +177,9 @@ body {
 }
 
 .status-btn {
-  font-size: 10px; padding: 2px 7px; border-radius: 10px;
+  font-size: 11px; padding: 4px 10px; border-radius: 10px;
   border: 1px solid; cursor: pointer; white-space: nowrap; font-weight: 600;
+  min-height: 28px;
 }
 .status-btn.s-waiting  { color: var(--accent2);  border-color: var(--accent2);  background: rgba(79,195,247,.12); }
 .status-btn.s-playing  { color: var(--success);  border-color: var(--success);  background: rgba(67,233,123,.15); cursor: default; }
@@ -183,8 +205,8 @@ body {
 }
 
 .delete-btn {
-  width: 18px; height: 18px; border: none; background: transparent;
-  color: var(--text-dim); cursor: pointer; border-radius: 3px;
+  width: 28px; height: 28px; border: none; background: transparent;
+  color: var(--text-dim); cursor: pointer; border-radius: 4px;
   font-size: 14px; line-height: 1; display: flex;
   align-items: center; justify-content: center; flex-shrink: 0;
 }
@@ -209,7 +231,7 @@ body {
   z-index: 2;
 }
 .table-card:hover      { border-color: var(--accent2); }
-.table-card.dragging   { cursor: grabbing; box-shadow: 0 12px 32px rgba(0,0,0,0.7); z-index: 100; }
+.table-card.dragging   { cursor: grabbing; box-shadow: 0 12px 32px var(--shadow-strong); z-index: 100; }
 .table-card.selected   { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,247,0.35); }
 .table-card.status-playing {
   border-color: var(--success);
@@ -236,9 +258,9 @@ body {
 
 .table-actions { display: flex; gap: 2px; }
 .table-actions button {
-  width: 22px; height: 22px; border: none; background: transparent;
+  width: 28px; height: 28px; border: none; background: transparent;
   color: var(--text-dim); cursor: pointer; border-radius: 4px;
-  font-size: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
 }
 .table-actions button:hover { background: var(--surface2); color: var(--text); }
 
@@ -254,14 +276,14 @@ body {
 .table-footer { gap: 4px; flex-wrap: wrap; }
 
 .btn-finish {
-  font-size: 12px; padding: 3px 10px;
+  font-size: 12px; padding: 6px 12px; min-height: 34px;
   border: 1px solid var(--danger); background: transparent;
   color: var(--danger); border-radius: 5px; cursor: pointer;
 }
 .btn-finish:hover { background: var(--danger); color: white; }
 
 .btn-disband {
-  font-size: 12px; padding: 3px 10px;
+  font-size: 12px; padding: 6px 12px; min-height: 34px;
   border: 1px solid var(--text-dim); background: transparent;
   color: var(--text-dim); border-radius: 5px; cursor: pointer;
 }
@@ -317,7 +339,7 @@ body {
 
 /* ── カスタムダイアログ ───────────────────────────────── */
 .dlg-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  position: fixed; inset: 0; background: var(--shadow-overlay);
   z-index: 3000; display: flex; align-items: center; justify-content: center;
 }
 .dlg-overlay.hidden { display: none; }
@@ -325,7 +347,7 @@ body {
 .dlg-box {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); width: 460px; max-width: 92vw;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  box-shadow: 0 20px 60px var(--shadow-strong);
   display: flex; flex-direction: column;
   animation: dlg-in .12s ease;
 }
@@ -430,7 +452,7 @@ body {
 
 /* ── 貼り付けモーダル ────────────────────────────────── */
 .paste-modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  position: fixed; inset: 0; background: var(--shadow-overlay);
   z-index: 2000; display: flex; align-items: center; justify-content: center;
 }
 .paste-modal.hidden { display: none; }
@@ -438,7 +460,7 @@ body {
 .paste-box {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); width: 500px; max-width: 92vw;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  box-shadow: 0 20px 60px var(--shadow-strong);
   display: flex; flex-direction: column;
 }
 
@@ -546,7 +568,13 @@ body {
 
   .matching-bar { height: auto; }
   .matching-bar-inner { padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
+  .matching-bar .btn { min-height: 40px; padding: 8px 14px; }
   .hint { display: none; }
+
+  .player-item { padding: 8px 8px; }
+  .status-btn { min-height: 34px; padding: 6px 12px; }
+  .delete-btn { width: 34px; height: 34px; font-size: 16px; }
+  .dlg-footer .btn { min-height: 40px; padding: 8px 16px; }
 
   .dlg-box { width: 96vw; }
   .paste-box { width: 96vw !important; }
@@ -575,11 +603,10 @@ body {
           style="width:40px;font-size:12px;padding:4px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
         <button id="btn-quick-add-tables" class="btn btn-primary" style="padding:6px 8px;font-size:12px;" title="テーブルを一括追加">＋ 一括</button>
       </span>
-      <button id="btn-add-obj"       class="btn btn-obj">＋ オブジェクト</button>
-      <button id="btn-sample"        class="btn btn-sample">サンプル</button>
-      <button id="btn-clear-matches" class="btn btn-danger">履歴クリア</button>
-      <button id="btn-settings"      class="btn btn-monitor">⚙ 設定</button>
-      <button id="btn-help"          class="btn btn-monitor">❓ ヘルプ</button>
+      <span style="flex:1;"></span>
+      <button id="btn-theme"         class="btn btn-monitor" title="テーマ切替" style="padding:6px 10px;">🌙</button>
+      <button id="btn-help"          class="btn btn-monitor" style="padding:6px 10px;">❓</button>
+      <button id="btn-settings"      class="btn btn-monitor" style="padding:6px 10px;">⚙</button>
     </div>
   </header>
 
@@ -606,6 +633,10 @@ body {
   <footer class="matching-bar">
     <div class="matching-bar-inner">
       <button id="btn-match"         class="btn btn-match">🎲 マッチング生成</button>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;">
+        <input type="checkbox" id="chk-assign-leftover" style="accent-color:var(--accent);cursor:pointer;">
+        余りも配席
+      </label>
       <button id="btn-regen-match"   class="btn btn-regen"    style="display:none">🔄 再マッチング</button>
       <button id="btn-confirm-match" class="btn btn-confirm"  style="display:none">✅ 全確定</button>
       <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none">✕ 全取消</button>
@@ -1329,7 +1360,8 @@ const doGenerateMatching = (shuffle = false) => {
   }
 
   const settings = getSettings()
-  const minFill = settings.minFill ?? 0
+  const assignLeftover = !!document.getElementById('chk-assign-leftover')?.checked
+  const minFill = assignLeftover ? 1 : (settings.minFill ?? 0)
   const vpMap = (settings.enableVP && settings.vpMatching) ? buildVpMap(matches) : null
   pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shuffle, minFill, vpMap)
   if (!pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
@@ -1727,6 +1759,18 @@ document.addEventListener('DOMContentLoaded', () => {
        </div>
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
+         <label>ツール</label>
+         <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
+           <button type="button" class="btn btn-cancel-m" id="dlg-add-obj" style="text-align:left;">
+             📦 オブジェクトを追加
+           </button>
+           <button type="button" class="btn btn-cancel-m" id="dlg-load-sample" style="text-align:left;">
+             🎲 サンプルデータを追加
+           </button>
+         </div>
+       </div>
+       <hr style="border-color:var(--border);margin:12px 0;">
+       <div class="dlg-field">
          <label style="color:var(--danger);">データクリア</label>
          <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
            <button type="button" class="btn btn-cancel-m" id="dlg-clear-matches" style="text-align:left;">
@@ -1764,6 +1808,15 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   document.getElementById('dlg-body').addEventListener('click', e => {
+    if (e.target.closest('#dlg-add-obj')) {
+      _closeDlg(null); setTimeout(() => dlgAddRoomObj(), 100); return
+    }
+    if (e.target.closest('#dlg-load-sample')) {
+      _closeDlg(null); setTimeout(() => {
+        dlgConfirm('サンプルデータ（プレイヤー18人、テーブル6卓）を追加しますか？<br><small>既存データが重複しない範囲で追加されます。</small>', '追加', 'btn-ok-add')
+          .then(ok => { if (ok) loadSampleData() })
+      }, 100); return
+    }
     const btn = e.target.closest('#dlg-clear-matches, #dlg-clear-players, #dlg-clear-tables, #dlg-clear-all')
     if (!btn) return
     const labels = {
@@ -1840,7 +1893,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  document.getElementById('btn-add-obj').addEventListener('click', () => dlgAddRoomObj())
   document.getElementById('btn-settings').addEventListener('click', dlgSettings)
 
   document.getElementById('btn-help').addEventListener('click', () => _openDlg(
@@ -1923,11 +1975,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('quick-add-table-count').addEventListener('keydown', e => {
     if (e.key === 'Enter') doQuickAddTables()
   })
-
-  document.getElementById('btn-clear-matches').addEventListener('click', () =>
-    dlgConfirm('対戦履歴を全クリアしますか？<br><small>テーブルの割り当ては変わりません。</small>', 'クリア', 'btn-danger')
-      .then(ok => { if (ok) { clearMatches(); render() } })
-  )
 
   const canvas = document.getElementById('canvas')
   canvas.addEventListener('click', e => {
@@ -2239,13 +2286,6 @@ document.addEventListener('DOMContentLoaded', () => {
     render()
   }
 
-  document.getElementById('btn-sample').addEventListener('click', () => {
-    dlgConfirm(
-      'サンプルデータ（プレイヤー18人、テーブル6卓）を追加しますか？<br><small>既存データが重複しない範囲で追加されます。</small>',
-      '追加', 'btn-ok-add'
-    ).then(ok => { if (ok) loadSampleData() })
-  })
-
   // ── サイドバーリサイズ ───────────────────────────────────
   const resizer = document.getElementById('panel-resizer')
   const panel   = document.getElementById('player-panel')
@@ -2273,6 +2313,27 @@ document.addEventListener('DOMContentLoaded', () => {
     resizer.classList.remove('dragging')
     document.body.style.cursor    = ''
     document.body.style.userSelect = ''
+  })
+
+  // ── テーマ切替 ──────────────────────────────────────────
+  const applyTheme = theme => {
+    const btn = document.getElementById('btn-theme')
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light')
+      btn.textContent = '☀'
+      btn.title = 'ダークモードに切替'
+    } else {
+      document.documentElement.removeAttribute('data-theme')
+      btn.textContent = '🌙'
+      btn.title = 'ライトモードに切替'
+    }
+  }
+  applyTheme(getSettings().theme || 'dark')
+
+  document.getElementById('btn-theme').addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'
+    applyTheme(next)
+    saveSettings({ ...getSettings(), theme: next })
   })
 
   render()

@@ -149,6 +149,12 @@ body {
   flex-shrink: 0;
 }
 
+.vp-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 5px;
+  border-radius: 4px; background: rgba(249,168,37,.15); color: var(--warning);
+  white-space: nowrap; flex-shrink: 0;
+}
+
 .status-btn {
   font-size: 10px; padding: 2px 7px; border-radius: 10px;
   border: 1px solid; cursor: pointer; white-space: nowrap; font-weight: 600;
@@ -195,7 +201,7 @@ body {
 }
 
 .table-card {
-  position: absolute; width: 200px;
+  position: absolute; width: 220px;
   background: var(--surface); border: 2px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow);
   cursor: grab; user-select: none; overflow: hidden;
@@ -225,7 +231,7 @@ body {
   padding: 8px 10px 7px; border-bottom: 1px solid var(--border);
 }
 
-.table-label { flex: 1; font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.table-label { flex: 1; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .table-size  { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
 
 .table-actions { display: flex; gap: 2px; }
@@ -237,7 +243,7 @@ body {
 .table-actions button:hover { background: var(--surface2); color: var(--text); }
 
 .table-players { padding: 8px 10px; }
-.table-player  { font-size: 17px; padding: 3px 0; font-weight: 500; }
+.table-player  { font-size: 15px; padding: 3px 0; font-weight: 500; word-break: break-all; }
 .table-empty   { font-size: 12px; color: var(--text-dim); font-style: italic; }
 
 .table-footer {
@@ -318,7 +324,7 @@ body {
 
 .dlg-box {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); width: 380px; max-width: 92vw;
+  border-radius: var(--radius); width: 460px; max-width: 92vw;
   box-shadow: 0 20px 60px rgba(0,0,0,0.7);
   display: flex; flex-direction: column;
   animation: dlg-in .12s ease;
@@ -505,6 +511,56 @@ body {
   cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .paste-panel-btn:hover { background: var(--border); color: var(--text); border-color: var(--accent2); }
+
+/* ── スマホ対応 ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  html, body { overflow: auto; }
+  #app { height: auto; min-height: 100vh; }
+
+  .app-header {
+    flex-wrap: wrap; height: auto; padding: 8px 10px; gap: 6px;
+  }
+  .app-header h1 { font-size: 15px; width: 100%; }
+  .header-actions {
+    flex-wrap: wrap; gap: 4px; width: 100%;
+  }
+  .header-actions .btn { font-size: 11px; padding: 5px 8px; }
+  .header-actions > span { width: 100%; display: flex; gap: 4px; }
+
+  .app-body { flex-direction: column; overflow: visible; }
+
+  .player-panel {
+    width: 100% !important; max-width: 100%; min-width: 0;
+    max-height: 40vh; border-bottom: 1px solid var(--border);
+  }
+
+  .panel-resizer { display: none; }
+
+  .canvas-wrap { min-height: 60vh; }
+
+  #canvas { min-width: 100%; min-height: 800px; }
+
+  .table-card { width: 180px; }
+  .table-player { font-size: 13px; }
+  .table-label { font-size: 14px; }
+
+  .matching-bar { height: auto; }
+  .matching-bar-inner { padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
+  .hint { display: none; }
+
+  .dlg-box { width: 96vw; }
+  .paste-box { width: 96vw !important; }
+
+  #toast { bottom: 10px; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  .header-actions .btn { font-size: 10px; padding: 4px 6px; }
+  .player-name { font-size: 13px; }
+  .player-item { padding: 4px 5px; gap: 3px; }
+  .table-card { width: 160px; }
+  .table-player { font-size: 13px; }
+}
 </style>
 </head>
 <body>
@@ -514,10 +570,16 @@ body {
     <div class="header-actions">
       <button id="btn-add-player"    class="btn btn-primary">＋ プレイヤー</button>
       <button id="btn-add-table"     class="btn btn-primary">＋ テーブル</button>
+      <span style="display:inline-flex;align-items:center;gap:3px;margin-left:-4px;">
+        <input type="number" id="quick-add-table-count" min="1" max="30" value="4" title="テーブル数"
+          style="width:40px;font-size:12px;padding:4px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+        <button id="btn-quick-add-tables" class="btn btn-primary" style="padding:6px 8px;font-size:12px;" title="テーブルを一括追加">＋ 一括</button>
+      </span>
       <button id="btn-add-obj"       class="btn btn-obj">＋ オブジェクト</button>
       <button id="btn-sample"        class="btn btn-sample">サンプル</button>
       <button id="btn-clear-matches" class="btn btn-danger">履歴クリア</button>
       <button id="btn-settings"      class="btn btn-monitor">⚙ 設定</button>
+      <button id="btn-help"          class="btn btn-monitor">❓ ヘルプ</button>
     </div>
   </header>
 
@@ -525,8 +587,13 @@ body {
     <aside class="player-panel" id="player-panel">
       <h2>プレイヤー</h2>
       <div id="player-stats" class="player-stats"></div>
-      <div style="padding:6px 8px 2px;">
-        <button class="paste-panel-btn" id="btn-open-paste">📋 Excelから一括入力</button>
+      <div style="padding:6px 8px 2px; display:flex; gap:4px;">
+        <button class="paste-panel-btn" id="btn-open-paste" style="flex:1;">📋 Excelから一括入力</button>
+      </div>
+      <div style="padding:2px 8px 2px; display:flex; gap:4px; align-items:center;">
+        <input type="number" id="quick-add-count" min="1" max="99" value="10" placeholder="人数"
+          style="width:52px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+        <button class="paste-panel-btn" id="btn-quick-add" style="flex:1;">＋ 人数で追加</button>
       </div>
       <div id="player-list"></div>
     </aside>
@@ -645,8 +712,8 @@ const addTable = (label, size = 4) => {
   const t = {
     id: generateId(), label, size,
     status: 'empty', playerIds: [],
-    x: 40 + (tables.length % 4) * 230,
-    y: 40 + Math.floor(tables.length / 4) * 200
+    x: 40 + (tables.length % 5) * 260,
+    y: 40 + Math.floor(tables.length / 5) * 260
   }
   tables.push(t)
   _save(KEYS.TABLES, tables)
@@ -668,10 +735,29 @@ const getMatches = () => _load(KEYS.MATCHES)
 
 const addMatch = (tableId, playerIds) => {
   const matches = getMatches()
-  const m = { id: generateId(), tableId, playerIds, timestamp: Date.now() }
+  const m = { id: generateId(), tableId, playerIds, timestamp: Date.now(), scores: null }
   matches.push(m)
   _save(KEYS.MATCHES, matches)
   return m
+}
+
+const updateMatchScores = (matchId, scores) => {
+  const matches = getMatches()
+  const idx = matches.findIndex(m => m.id === matchId)
+  if (idx === -1) return
+  matches[idx].scores = scores
+  _save(KEYS.MATCHES, matches)
+}
+
+const buildVpMap = (matches) => {
+  const map = {}
+  matches.forEach(m => {
+    if (!m.scores) return
+    Object.entries(m.scores).forEach(([pid, vp]) => {
+      map[pid] = (map[pid] ?? 0) + (vp ?? 0)
+    })
+  })
+  return map
 }
 
 const clearMatches = () => _save(KEYS.MATCHES, [])
@@ -720,19 +806,24 @@ const deleteRoomObject  = id => _save('mg_objects', getRoomObjects().filter(o =>
 // matching — マッチングアルゴリズム
 // ════════════════════════════════════════════════════════
 
-const pairPenalty = (a, b, players, matches) => {
+const pairPenalty = (a, b, players, matches, vpMap = null) => {
   const count = matches.filter(m => m.playerIds.includes(a) && m.playerIds.includes(b)).length
   const pa = players.find(p => p.id === a)
   const pb = players.find(p => p.id === b)
   const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? 5 : 0
-  return count * 10 + groupPen
+  let vpPen = 0
+  if (vpMap) {
+    const diff = Math.abs((vpMap[a] ?? 0) - (vpMap[b] ?? 0))
+    vpPen = Math.floor(diff / 5)
+  }
+  return count * 10 + groupPen + vpPen
 }
 
-const groupPenalty = (playerIds, players, matches) => {
+const groupPenalty = (playerIds, players, matches, vpMap = null) => {
   let total = 0
   for (let i = 0; i < playerIds.length; i++)
     for (let j = i + 1; j < playerIds.length; j++)
-      total += pairPenalty(playerIds[i], playerIds[j], players, matches)
+      total += pairPenalty(playerIds[i], playerIds[j], players, matches, vpMap)
   return total
 }
 
@@ -755,14 +846,14 @@ const shuffleArray = arr => {
   return a
 }
 
-const findBestGroup = (players, size, allPlayers, matches) => {
+const findBestGroup = (players, size, allPlayers, matches, vpMap = null) => {
   if (players.length < size) return null
   const ids = players.map(p => p.id)
 
   if (ids.length <= 20) {
     let best = null, bestScore = Infinity
     combinations(ids, size).forEach(combo => {
-      const score = groupPenalty(combo, allPlayers, matches)
+      const score = groupPenalty(combo, allPlayers, matches, vpMap)
       if (score < bestScore) { bestScore = score; best = combo }
     })
     return best
@@ -774,7 +865,7 @@ const findBestGroup = (players, size, allPlayers, matches) => {
   while (result.length < size && remaining.length > 0) {
     let bestIdx = 0, bScore = Infinity
     for (let i = 0; i < remaining.length; i++) {
-      const s = groupPenalty([...result, remaining[i]], allPlayers, matches)
+      const s = groupPenalty([...result, remaining[i]], allPlayers, matches, vpMap)
       if (s < bScore) { bScore = s; bestIdx = i }
     }
     result.push(remaining[bestIdx])
@@ -783,7 +874,7 @@ const findBestGroup = (players, size, allPlayers, matches) => {
   return result
 }
 
-const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0) => {
+const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0, vpMap = null) => {
   if (!waitingPlayers.length || !emptyTables.length) return []
   let pool = shuffle ? shuffleArray(waitingPlayers) : [...waitingPlayers]
   const assignments = []
@@ -791,12 +882,68 @@ const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuf
     const minRequired = minFill > 0 ? minFill : table.size
     const actualSize  = Math.min(pool.length, table.size)
     if (actualSize < minRequired) continue
-    const best = findBestGroup(pool, actualSize, allPlayers, matches)
+    const best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap)
     if (!best) continue
     assignments.push({ tableId: table.id, playerIds: best })
     pool = pool.filter(p => !best.includes(p.id))
   }
   return assignments
+}
+
+// 席移動最小化 — グループ↔テーブル割り当ての最適化（後処理）
+const permutations = arr => {
+  if (arr.length <= 1) return [arr]
+  const result = []
+  for (let i = 0; i < arr.length; i++) {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)]
+    for (const p of permutations(rest)) result.push([arr[i], ...p])
+  }
+  return result
+}
+
+const optimizeTableAssignment = (assignments, matches) => {
+  if (assignments.length <= 1) return assignments
+  // 各プレイヤーの直近テーブルを構築
+  const lastTable = {}
+  matches.forEach(m => {
+    m.playerIds.forEach(pid => { lastTable[pid] = m.tableId })
+  })
+  // テーブルIDリストとグループリストを分離
+  const tableIds = assignments.map(a => a.tableId)
+  const groups   = assignments.map(a => a.playerIds)
+
+  // 9テーブル以上は greedy fallback（9! = 362,880 は重い）
+  if (tableIds.length > 8) {
+    // 各グループに最も相性の良いテーブルを貪欲に割り当て
+    const usedTables = new Set()
+    const result = []
+    for (let gi = 0; gi < groups.length; gi++) {
+      let bestTid = null, bestStay = -1
+      for (const tid of tableIds) {
+        if (usedTables.has(tid)) continue
+        const stay = groups[gi].filter(pid => lastTable[pid] === tid).length
+        if (stay > bestStay) { bestStay = stay; bestTid = tid }
+      }
+      usedTables.add(bestTid)
+      result.push({ tableId: bestTid, playerIds: groups[gi] })
+    }
+    return result
+  }
+
+  // 全順列を試して移動数が最小のものを採用
+  const perms = permutations(tableIds)
+  let bestPerm  = tableIds
+  let bestMoves = Infinity
+  for (const perm of perms) {
+    let moves = 0
+    perm.forEach((tid, gi) => {
+      groups[gi].forEach(pid => {
+        if (lastTable[pid] && lastTable[pid] !== tid) moves++
+      })
+    })
+    if (moves < bestMoves) { bestMoves = moves; bestPerm = perm }
+  }
+  return bestPerm.map((tid, i) => ({ tableId: tid, playerIds: groups[i] }))
 }
 
 // ════════════════════════════════════════════════════════
@@ -926,6 +1073,8 @@ const renderPlayers = () => {
   const list = document.getElementById('player-list')
   if (!list) return
   const tables  = getTables()
+  const vpEnabled = !!getSettings().enableVP
+  const vpMap = vpEnabled ? buildVpMap(getMatches()) : {}
   const tableOrder = Object.fromEntries(tables.map((t, i) => [t.id, i]))
   const playerTable = pid => tables.find(t => t.playerIds.includes(pid))
   const players = [...getPlayers()].sort((a, b) => {
@@ -978,6 +1127,7 @@ const renderPlayers = () => {
         title="マッチング対象に指定" style="accent-color:var(--accent);cursor:pointer;flex-shrink:0;width:14px;height:14px;">
       <span class="player-name" data-action="edit-player" data-id="${p.id}" title="ダブルクリックで編集">${esc(p.name)}</span>
       ${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}
+      ${vpEnabled && vpMap[p.id] != null ? `<span class="vp-badge" title="累計VP">${vpMap[p.id]}VP</span>` : ''}
       ${tblBadge}
       <button class="delete-btn" data-action="history" data-id="${p.id}" title="対戦履歴">📋</button>
       <button class="status-btn s-${p.status}" ${p.status !== 'playing' ? `data-action="cycle" data-id="${p.id}"` : 'disabled title="テーブルから外すと自動で待機に戻ります"'}>${statusLabel(p.status)}</button>
@@ -1060,8 +1210,16 @@ const refreshTableCard = (el, t) => {
   const seated   = t.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean)
   const sel      = !!selectedTables[t.id]
   const pending  = pendingMatches.find(m => m.tableId === t.id)
+  const vpEnabled = !!getSettings().enableVP
 
   el.className = `table-card status-${t.status}${sel ? ' selected' : ''}${pending ? ' pending' : ''}`
+
+  // VP入力用: 対戦中テーブルの直近マッチを取得
+  let currentMatch = null
+  if (vpEnabled && t.status === 'playing') {
+    const allMatches = getMatches()
+    currentMatch = [...allMatches].reverse().find(m => m.tableId === t.id)
+  }
 
   const playersHtml = pending
     ? `<div class="pending-badge">仮マッチング！！</div>` +
@@ -1070,7 +1228,13 @@ const refreshTableCard = (el, t) => {
         return `<div class="table-player pending-player">${esc(p?.name ?? '?')}</div>`
       }).join('')
     : seated.length
-      ? seated.map(p => `<div class="table-player">${esc(p.name)}</div>`).join('')
+      ? seated.map(p => {
+          const vpInput = (vpEnabled && t.status === 'playing' && currentMatch)
+            ? `<input type="number" class="vp-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
+                value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="VP" style="width:52px;font-size:12px;padding:1px 4px;margin-left:auto;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);">`
+            : ''
+          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${vpInput}</div>`
+        }).join('')
       : '<div class="table-empty">空席</div>'
 
   const footerHtml = pending
@@ -1086,9 +1250,7 @@ const refreshTableCard = (el, t) => {
       <span class="table-label">${esc(t.label)}</span>
       <span class="table-size">${t.size}人</span>
       <div class="table-actions no-drag">
-        <button data-action="edit-members" data-id="${t.id}" title="手動でメンバー変更">👥</button>
-        <button data-action="rename"       data-id="${t.id}" title="名前変更">✏</button>
-        <button data-action="del-table"    data-id="${t.id}" title="削除">×</button>
+        <button data-action="table-menu" data-id="${t.id}" title="テーブル設定">⚙</button>
       </div>
     </div>
     <div class="table-players">${playersHtml}</div>
@@ -1166,9 +1328,15 @@ const doGenerateMatching = (shuffle = false) => {
     return
   }
 
-  const minFill = getSettings().minFill ?? 0
-  pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shuffle, minFill)
+  const settings = getSettings()
+  const minFill = settings.minFill ?? 0
+  const vpMap = (settings.enableVP && settings.vpMatching) ? buildVpMap(matches) : null
+  pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shuffle, minFill, vpMap)
   if (!pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
+  // 複数テーブル時、席移動を最小化するテーブル割り当てを選択
+  if (pendingMatches.length > 1) {
+    pendingMatches = optimizeTableAssignment(pendingMatches, matches)
+  }
   renderTables(); renderMatchingBar(); renderPlayers(); renderPlayerStats()
 }
 
@@ -1286,6 +1454,38 @@ document.addEventListener('DOMContentLoaded', () => {
     render()
   })
 
+  // 人数で一括追加（インライン）
+  const doQuickAddPlayers = () => {
+    const count = parseInt(document.getElementById('quick-add-count')?.value ?? '0', 10)
+    if (!count || count < 1) { toast('人数を入力してください'); return }
+
+    dlgConfirm(
+      `「プレイヤー01」〜 の形式で <strong>${count}人</strong> を追加しますか？`,
+      '追加', 'btn-ok-add'
+    ).then(ok => {
+      if (!ok) return
+      const existing = new Set(getPlayers().map(p => p.name))
+      let maxNum = 0
+      existing.forEach(name => {
+        const m = name.match(/^プレイヤー(\d+)$/)
+        if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
+      })
+
+      let added = 0
+      for (let i = 0; i < count; i++) {
+        const num = maxNum + 1 + i
+        const name = 'プレイヤー' + String(num).padStart(2, '0')
+        if (!existing.has(name)) {
+          addPlayer(name, null)
+          existing.add(name)
+          added++
+        }
+      }
+      render()
+      toast(`${added}人のプレイヤーを追加しました`)
+    })
+  }
+
   // プレイヤー編集ダイアログ
   const dlgEditPlayer = id => {
     const p = getPlayers().find(x => x.id === id)
@@ -1323,7 +1523,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const p       = getPlayers().find(x => x.id === id)
     if (!p) return
     const allPlayers = getPlayers()
-    const matches = getMatches().filter(m => m.playerIds.includes(id))
+    const allMatches = getMatches()
+    const matches = allMatches.filter(m => m.playerIds.includes(id))
+    const vpEnabled = !!getSettings().enableVP
+    const totalVP = vpEnabled ? matches.reduce((sum, m) => sum + (m.scores?.[id] ?? 0), 0) : 0
+
     // 対戦相手ごとに集計
     const countMap = {}
     matches.forEach(m => {
@@ -1344,13 +1548,36 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`
       }).join('')
 
+    // 各対戦の詳細（VP含む）
+    const tables = getTables()
+    const matchRows = vpEnabled ? matches.slice().reverse().map(m => {
+      const tbl = tables.find(t => t.id === m.tableId)
+      const opponents = m.playerIds.filter(pid => pid !== id).map(pid => {
+        const op = allPlayers.find(x => x.id === pid)
+        return op ? esc(op.name) : '?'
+      }).join(', ')
+      const vp = m.scores?.[id]
+      const vpStr = vp != null ? `<span class="vp-badge">${vp}VP</span>` : ''
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--text-dim);width:50px;flex-shrink:0;">${esc(tbl?.label ?? '?')}</span>
+        <span style="flex:1;font-size:12px;">${opponents}</span>
+        ${vpStr}
+      </div>`
+    }).join('') : ''
+
     return _openDlg(
       `${esc(p.name)} の対戦履歴`,
       `<div class="dlg-field">
          <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
-           対戦回数：${matches.length}回 ／ 対戦相手：${Object.keys(countMap).length}人
+           対戦回数：${matches.length}回 ／ 対戦相手：${Object.keys(countMap).length}人${vpEnabled ? ` ／ 累計VP：${totalVP}` : ''}
          </p>
-         <div style="max-height:280px;overflow-y:auto;">
+         ${vpEnabled && matchRows ? `
+         <p style="font-size:12px;font-weight:600;margin:8px 0 4px;color:var(--warning);">対戦ごとのスコア</p>
+         <div style="max-height:140px;overflow-y:auto;margin-bottom:8px;">
+           ${matchRows}
+         </div>
+         <p style="font-size:12px;font-weight:600;margin:8px 0 4px;">対戦相手</p>` : ''}
+         <div style="max-height:${vpEnabled ? '140' : '280'}px;overflow-y:auto;">
            ${rows || '<p style="color:var(--text-dim);font-size:13px;">まだ対戦履歴がありません</p>'}
          </div>
        </div>`,
@@ -1483,6 +1710,23 @@ document.addEventListener('DOMContentLoaded', () => {
        </div>
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
+         <label style="cursor:pointer;">
+           <input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
+           勝利点（VP）を記録する
+         </label>
+         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 6px 22px;">
+           ONにすると対戦中のテーブルにスコア入力欄が表示されます。
+         </p>
+         <label style="cursor:pointer;margin-left:22px;">
+           <input type="checkbox" id="dlg-vp-matching" ${s.vpMatching ? 'checked' : ''} ${!s.enableVP ? 'disabled' : ''} style="accent-color:var(--accent);margin-right:6px;">
+           マッチングにVPを加味する
+         </label>
+         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 44px;">
+           累計VPが近いプレイヤー同士を同卓にしやすくします。
+         </p>
+       </div>
+       <hr style="border-color:var(--border);margin:12px 0;">
+       <div class="dlg-field">
          <label style="color:var(--danger);">データクリア</label>
          <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
            <button type="button" class="btn btn-cancel-m" id="dlg-clear-matches" style="text-align:left;">
@@ -1504,10 +1748,20 @@ document.addEventListener('DOMContentLoaded', () => {
     ).then(ok => {
       if (!ok) return
       const v = parseInt(document.getElementById('dlg-min-fill')?.value ?? '0', 10)
-      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v) })
+      const enableVP = !!document.getElementById('dlg-enable-vp')?.checked
+      const vpMatching = enableVP && !!document.getElementById('dlg-vp-matching')?.checked
+      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), enableVP, vpMatching })
+      render()
       toast('設定を保存しました')
     })
   }
+
+  document.getElementById('dlg-body').addEventListener('change', e => {
+    if (e.target.id === 'dlg-enable-vp') {
+      const vpMatch = document.getElementById('dlg-vp-matching')
+      if (vpMatch) { vpMatch.disabled = !e.target.checked; if (!e.target.checked) vpMatch.checked = false }
+    }
+  })
 
   document.getElementById('dlg-body').addEventListener('click', e => {
     const btn = e.target.closest('#dlg-clear-matches, #dlg-clear-players, #dlg-clear-tables, #dlg-clear-all')
@@ -1589,8 +1843,86 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-add-obj').addEventListener('click', () => dlgAddRoomObj())
   document.getElementById('btn-settings').addEventListener('click', dlgSettings)
 
+  document.getElementById('btn-help').addEventListener('click', () => _openDlg(
+    'ヘルプ — 使い方ガイド',
+    `<div style="max-height:380px;overflow-y:auto;font-size:13px;line-height:1.7;">
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🎲 マッチングアルゴリズム</h3>
+      <p style="margin:0 0 10px;">
+        スコアベースの組み合わせ最適化を使用します。<br>
+        <strong>過去に対戦済みのペア</strong>を避け、<strong>異なるグループ</strong>のプレイヤーを優先的に組み合わせます。<br>
+        複数テーブルにマッチングする場合、席移動が最小になるテーブル割り当てを自動で選びます。
+      </p>
+
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🏷 グループ (A〜E)</h3>
+      <p style="margin:0 0 10px;">
+        同じグループのプレイヤー同士は<strong>同じテーブルになりにくく</strong>なります。<br>
+        使い方の例：<br>
+        ・所属チームやサークルで分ける<br>
+        ・レベル帯（初心者/中級/上級）で分ける<br>
+        ・友人グループを分けて新しい対戦相手と当たりやすくする
+      </p>
+
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">✅ チェック＆選択</h3>
+      <p style="margin:0 0 10px;">
+        <strong>プレイヤーのチェック</strong>：チェックした人だけをマッチング対象にできます（Shift+クリックで範囲選択）<br>
+        <strong>テーブルの選択</strong>：選択したテーブルだけに割り当てます（未選択時は全空きテーブルが対象）
+      </p>
+
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⚡ 勝利点 (VP)</h3>
+      <p style="margin:0 0 10px;">
+        設定で「勝利点を記録する」をONにすると、対戦中のテーブルカードにスコア入力欄が表示されます。<br>
+        「マッチングにVPを加味する」をONにすると、累計VPが近いプレイヤー同士が同卓になりやすくなります。
+      </p>
+
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⌨ ショートカット</h3>
+      <p style="margin:0;">
+        <strong>Ctrl+Z</strong>：直前の操作を元に戻す（マッチング確定、テーブル終了など）
+      </p>
+    </div>`,
+    `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
+  ))
+
   document.getElementById('btn-add-player').addEventListener('click', dlgAddPlayer)
+  document.getElementById('btn-quick-add').addEventListener('click', doQuickAddPlayers)
+  document.getElementById('quick-add-count').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doQuickAddPlayers()
+  })
   document.getElementById('btn-add-table').addEventListener('click', dlgAddTable)
+
+  const doQuickAddTables = () => {
+    const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
+    if (!count || count < 1) { toast('テーブル数を入力してください'); return }
+
+    dlgConfirm(
+      `「テーブル1」〜 の形式で <strong>${count}卓</strong> を追加しますか？<br><small>サイズは4人（後から変更可）</small>`,
+      '追加', 'btn-ok-add'
+    ).then(ok => {
+      if (!ok) return
+      const existing = new Set(getTables().map(t => t.label))
+      let maxNum = 0
+      existing.forEach(label => {
+        const m = label.match(/^テーブル(\d+)$/)
+        if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
+      })
+      maxNum = Math.max(maxNum, getTables().length)
+      let added = 0
+      for (let i = 0; i < count; i++) {
+        const num = maxNum + 1 + i
+        const label = 'テーブル' + num
+        if (!existing.has(label)) {
+          addTable(label, 4)
+          existing.add(label)
+          added++
+        }
+      }
+      render()
+      toast(`${added}卓のテーブルを追加しました`)
+    })
+  }
+  document.getElementById('btn-quick-add-tables').addEventListener('click', doQuickAddTables)
+  document.getElementById('quick-add-table-count').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doQuickAddTables()
+  })
 
   document.getElementById('btn-clear-matches').addEventListener('click', () =>
     dlgConfirm('対戦履歴を全クリアしますか？<br><small>テーブルの割り当ては変わりません。</small>', 'クリア', 'btn-danger')
@@ -1603,14 +1935,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn) return
     const { action, id } = btn.dataset
 
-    if (action === 'edit-members') {
-      dlgEditMembers(id)
-    } else if (action === 'rename') {
-      dlgRenameTable(id)
-    } else if (action === 'del-table') {
+    if (action === 'table-menu') {
       const tbl = getTables().find(x => x.id === id)
-      dlgConfirm(`<strong>${esc(tbl?.label ?? '')}</strong> を削除しますか？`)
-        .then(ok => { if (ok) { deleteTable(id); delete selectedTables[id]; render() } })
+      if (!tbl) return
+      const sizeOptions = [2, 3, 4]
+      const nextSize = sizeOptions[(sizeOptions.indexOf(tbl.size) + 1) % sizeOptions.length]
+      _openDlg(
+        `${esc(tbl.label)} の設定`,
+        `<div style="display:flex;flex-direction:column;gap:8px;">
+           <button type="button" class="btn btn-cancel-m" id="dlg-tm-rename" style="text-align:left;">✏ 名前変更</button>
+           <button type="button" class="btn btn-cancel-m" id="dlg-tm-members" style="text-align:left;">👥 メンバー編集</button>
+           <button type="button" class="btn btn-cancel-m" id="dlg-tm-size" style="text-align:left;">🔢 サイズ変更 → ${nextSize}人</button>
+           <button type="button" class="btn btn-danger"   id="dlg-tm-delete" style="text-align:left;">🗑 テーブルを削除</button>
+         </div>`,
+        `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
+      )
+      // メニュー内ボタンのイベント委譲
+      const handler = e2 => {
+        const b = e2.target.closest('#dlg-tm-rename, #dlg-tm-members, #dlg-tm-size, #dlg-tm-delete')
+        if (!b) return
+        _closeDlg(null)
+        document.getElementById('dlg-body').removeEventListener('click', handler)
+        if (b.id === 'dlg-tm-rename') dlgRenameTable(id)
+        else if (b.id === 'dlg-tm-members') dlgEditMembers(id)
+        else if (b.id === 'dlg-tm-size') { updateTable(id, { size: nextSize }); render() }
+        else if (b.id === 'dlg-tm-delete') {
+          dlgConfirm(`<strong>${esc(tbl.label)}</strong> を削除しますか？`)
+            .then(ok => { if (ok) { deleteTable(id); delete selectedTables[id]; render() } })
+        }
+      }
+      document.getElementById('dlg-body').addEventListener('click', handler)
     } else if (action === 'confirm-one') {
       const m = pendingMatches.find(x => x.tableId === id)
       if (m) {
@@ -1646,6 +2000,20 @@ document.addEventListener('DOMContentLoaded', () => {
   canvas.addEventListener('change', e => {
     const inp = e.target.closest('[data-action="select"]')
     if (inp) toggleTableSelect(inp.dataset.id, inp.checked)
+  })
+
+  canvas.addEventListener('input', e => {
+    const vpInp = e.target.closest('[data-action="vp-input"]')
+    if (!vpInp) return
+    const matchId = vpInp.dataset.matchId
+    const pid     = vpInp.dataset.pid
+    const val     = vpInp.value.trim() === '' ? null : Number(vpInp.value)
+    const allMatches = getMatches()
+    const match = allMatches.find(m => m.id === matchId)
+    if (!match) return
+    const scores = match.scores || {}
+    if (val === null) delete scores[pid]; else scores[pid] = val
+    updateMatchScores(matchId, Object.keys(scores).length ? scores : null)
   })
 
 

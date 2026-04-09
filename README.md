@@ -5,7 +5,7 @@
 
 ## 🌐 デモ
 
-**[→ アプリを開く](https://sowatanabe-tech.github.io/matching-kanri/)**
+**[→ アプリを開く](https://soichirow.github.io/matching-kanri/)**
 
 ---
 

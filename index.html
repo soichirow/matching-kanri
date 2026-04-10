@@ -71,7 +71,22 @@ body {
 }
 
 
+.header-title {
+  font-size: 16px; font-weight: 800; color: var(--text); white-space: nowrap;
+  letter-spacing: 0.03em; margin-right: 16px;
+}
+@media (max-width: 768px) { .header-title { display: none; } }
+
 .header-actions { display: flex; gap: 8px; }
+
+.app-footer {
+  flex-shrink: 0; padding: 4px 16px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-dim); text-align: center;
+}
+.app-footer a { color: var(--accent2); text-decoration: none; }
+.app-footer a:hover { text-decoration: underline; }
+@media (max-width: 768px) { .app-footer { display: none; } }
 
 .app-body { display: flex; flex: 1; overflow: hidden; }
 
@@ -165,6 +180,10 @@ body {
   font-size: 10px; font-weight: 700; padding: 1px 5px;
   border-radius: 4px; background: var(--bg); color: var(--accent);
 }
+.bracket-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 5px;
+  border-radius: 4px; background: rgba(249,168,37,.15); color: var(--warning);
+}
 
 .table-badge {
   font-size: 10px; font-weight: 700; padding: 1px 5px;
@@ -232,11 +251,25 @@ body {
 .canvas-wrap { flex: 1; overflow: auto; position: relative; }
 
 #canvas {
-  position: relative; min-width: 2400px; min-height: 1600px;
+  position: relative; min-width: 1200px; min-height: 800px;
   background-color: var(--bg);
   background-image: radial-gradient(circle, var(--surface2) 1px, transparent 1px);
   background-size: 28px 28px;
 }
+.zoom-controls {
+  position: fixed; bottom: 100px; right: 16px; z-index: 20;
+  display: flex; gap: 4px; align-items: center;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px 8px; box-shadow: var(--shadow);
+  font-size: 12px; color: var(--text-dim); user-select: none;
+}
+.zoom-controls button {
+  width: 28px; height: 28px; border: none; border-radius: 6px;
+  background: var(--surface2); color: var(--text); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.zoom-controls button:hover { background: var(--accent); color: white; }
+@media (max-width: 768px) { .zoom-controls { display: none; } }
 
 .table-card {
   position: absolute; width: 220px;
@@ -252,6 +285,14 @@ body {
 .table-card.status-playing {
   border-color: var(--success);
   box-shadow: 0 0 0 2px rgba(67,233,123,0.2), var(--shadow);
+}
+.table-card.status-playing.irregular {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 2px rgba(249,168,37,0.25), var(--shadow);
+}
+.irregular-badge {
+  font-size: 11px; font-weight: 700; color: var(--warning);
+  padding: 1px 0;
 }
 .table-card.pending {
   border-color: var(--warning);
@@ -283,6 +324,7 @@ body {
 .table-players { padding: 8px 10px; }
 .table-player  { font-size: 15px; padding: 3px 0; font-weight: 500; word-break: break-all; }
 .table-empty   { font-size: 12px; color: var(--text-dim); font-style: italic; }
+.table-player.empty-slot { color: var(--text-dim); font-weight: 400; font-size: 13px; opacity: 0.5; }
 
 .table-footer {
   padding: 6px 10px; border-top: 1px solid var(--border);
@@ -441,7 +483,7 @@ body {
   padding: 8px;
 }
 .room-obj-label {
-  font-size: 13px; font-weight: 700; text-align: center;
+  font-size: 18px; font-weight: 700; text-align: center;
   opacity: 0.85; word-break: break-all; pointer-events: none;
 }
 .room-obj-bar {
@@ -457,6 +499,14 @@ body {
   font-size: 11px; cursor: pointer; display:flex; align-items:center; justify-content:center;
 }
 .room-obj-bar button:hover { background: rgba(0,0,0,0.7); color: white; }
+
+.room-obj-resize {
+  position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+  cursor: nwse-resize; z-index: 5;
+  background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.3) 50%);
+  border-radius: 0 0 8px 0;
+}
+.room-obj:hover .room-obj-resize { background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.55) 50%); }
 
 .hidden  { display: none !important; }
 .no-drag { cursor: default !important; }
@@ -520,6 +570,7 @@ body {
 .paste-preview-row:last-child { border-bottom: none; }
 .paste-preview-name  { flex: 1; color: var(--text); }
 .paste-preview-group { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: var(--surface2); color: var(--accent); }
+.paste-preview-bracket { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(249,168,37,.15); color: var(--warning); }
 .paste-preview-err   { color: var(--danger); font-size: 11px; }
 .paste-preview-count { padding: 4px 0; color: var(--text-dim); font-size: 11px; border-top: 1px solid var(--border); margin-top: 4px; }
 
@@ -611,6 +662,7 @@ body {
 <body>
 <div id="app">
   <header class="app-header">
+    <span class="header-title">マッチング管理</span>
     <div class="header-actions">
       <select id="quick-add-table-count" class="quick-select">
         <option value="1">1</option><option value="2">2</option><option value="3">3</option>
@@ -644,8 +696,14 @@ body {
       <div id="player-list"></div>
     </aside>
     <div class="panel-resizer" id="panel-resizer"></div>
-    <main class="canvas-wrap">
+    <main class="canvas-wrap" id="canvas-wrap">
       <div id="canvas"></div>
+      <div class="zoom-controls" id="zoom-controls">
+        <button id="zoom-out" title="縮小">−</button>
+        <span id="zoom-label">100%</span>
+        <button id="zoom-in" title="拡大">+</button>
+        <button id="zoom-reset" title="リセット" style="font-size:11px;">↺</button>
+      </div>
     </main>
   </div>
 
@@ -665,6 +723,7 @@ body {
       <button id="btn-undo" class="btn btn-monitor" title="元に戻す" style="padding:6px 10px;">↩</button>
     </div>
   </footer>
+  <div class="app-footer">(c) そういちろう — <a href="https://x.com/black777cat" target="_blank" rel="noopener">@black777cat</a></div>
 </div>
 
 <!-- カスタムダイアログ -->
@@ -696,8 +755,8 @@ body {
     </div>
 
     <div id="paste-hint-player" class="paste-hint">
-      A列に<code>名前</code>、B列に<code>グループ</code>を入れてコピー → 下に貼り付け<br>
-      CSV(カンマ区切り)にも対応。グループは任意の文字列（省略可）。同名はスキップ。
+      A列に<code>名前</code>、B列に<code>グループ</code>、C列に<code>ブラケット</code>を入れてコピー → 下に貼り付け<br>
+      CSV(カンマ区切り)にも対応。グループ・ブラケットは任意（省略可）。同名はスキップ。
     </div>
     <div id="paste-hint-table" class="paste-hint" style="display:none">
       ExcelのA列に<code>テーブル名</code>、B列に<code>サイズ(2/3/4)</code>を入れてコピー → 下に貼り付け<br>
@@ -1020,6 +1079,9 @@ const optimizeTableAssignment = (assignments, matches) => {
 
 const isMobile = () => window.innerWidth <= 768
 
+const SNAP_GRID = 28  // ドットグリッドと同じ間隔
+const snap = v => Math.round(v / SNAP_GRID) * SNAP_GRID
+
 const enableDrag = (el, onMove) => {
   let startMX, startMY, startL, startT, dragging = false
 
@@ -1035,9 +1097,17 @@ const enableDrag = (el, onMove) => {
     const y = Math.max(0, startT + cy - startMY)
     el.style.left = `${x}px`
     el.style.top  = `${y}px`
-    onMove?.(x, y)
   }
-  const end = () => { dragging = false; el.classList.remove('dragging') }
+  const end = () => {
+    dragging = false
+    el.classList.remove('dragging')
+    // グリッドにスナップ
+    const sx = snap(Math.max(0, parseInt(el.style.left) || 0))
+    const sy = snap(Math.max(0, parseInt(el.style.top)  || 0))
+    el.style.left = `${sx}px`
+    el.style.top  = `${sy}px`
+    onMove?.(sx, sy)
+  }
 
   const onMM = e => { if (dragging) move(e.clientX, e.clientY) }
   const onMU = () => { end(); document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU) }
@@ -1062,6 +1132,23 @@ const enableDrag = (el, onMove) => {
 }
 
 const applyPosition = (el, x, y) => { el.style.left = `${x}px`; el.style.top = `${y}px` }
+
+// ── キャンバスズーム ──────────────────────────────────────
+const ZOOM_MIN = 0.3, ZOOM_MAX = 1.5, ZOOM_STEP = 0.1
+let canvasZoom = 1
+
+const applyZoom = () => {
+  const canvas = document.getElementById('canvas')
+  if (!canvas) return
+  canvas.style.zoom = canvasZoom
+  const label = document.getElementById('zoom-label')
+  if (label) label.textContent = `${Math.round(canvasZoom * 100)}%`
+}
+
+const zoomBy = delta => {
+  canvasZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(canvasZoom + delta).toFixed(2)))
+  applyZoom()
+}
 
 // ════════════════════════════════════════════════════════
 // main — UI
@@ -1209,6 +1296,7 @@ const renderPlayers = () => {
         title="マッチング対象に指定" style="accent-color:var(--accent);cursor:pointer;flex-shrink:0;width:14px;height:14px;">
       <span class="player-name" data-action="edit-player" data-id="${p.id}" title="タップで編集">${esc(p.name)}</span>
       ${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}
+      ${p.bracket ? `<span class="bracket-badge" title="ブラケット">${esc(p.bracket)}</span>` : ''}
       ${vpEnabled && vpMap[p.id] != null ? `<span class="score-badge" title="累計点数">${vpMap[p.id]}pt</span>` : ''}
       ${tblBadge}
       <button class="delete-btn" data-action="history" data-id="${p.id}" title="対戦履歴">📋</button>
@@ -1252,7 +1340,43 @@ const renderRoomObjects = () => {
       <div class="room-obj-inner">
         <div class="room-obj-label" style="color:${o.color}">${esc(o.label)}</div>
       </div>
+      <div class="room-obj-resize no-drag" data-resize="${o.id}"></div>
     `
+    // リサイズハンドル
+    const resizeHandle = el.querySelector('.room-obj-resize')
+    if (resizeHandle && !resizeHandle._bound) {
+      resizeHandle._bound = true
+      const startResize = (cx, cy) => {
+        const startW = el.offsetWidth, startH = el.offsetHeight
+        const startX = cx, startY = cy
+        const onMove = (mx, my) => {
+          const w = Math.max(80, startW + mx - startX)
+          const h = Math.max(50, startH + my - startY)
+          el.style.width  = `${snap(w)}px`
+          el.style.height = `${snap(h)}px`
+        }
+        const onEnd = () => {
+          updateRoomObject(o.id, {
+            w: parseInt(el.style.width),
+            h: parseInt(el.style.height)
+          })
+          document.removeEventListener('mousemove', mm)
+          document.removeEventListener('mouseup', mu)
+          document.removeEventListener('touchmove', tm)
+          document.removeEventListener('touchend', te)
+        }
+        const mm = e => onMove(e.clientX, e.clientY)
+        const mu = () => onEnd()
+        const tm = e => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY) }
+        const te = () => onEnd()
+        document.addEventListener('mousemove', mm)
+        document.addEventListener('mouseup', mu)
+        document.addEventListener('touchmove', tm, { passive: false })
+        document.addEventListener('touchend', te)
+      }
+      resizeHandle.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); startResize(e.clientX, e.clientY) })
+      resizeHandle.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); startResize(e.touches[0].clientX, e.touches[0].clientY) }, { passive: false })
+    }
   })
 }
 
@@ -1294,7 +1418,8 @@ const refreshTableCard = (el, t) => {
   const pending  = pendingMatches.find(m => m.tableId === t.id)
   const vpEnabled = !!getSettings().enableVP
 
-  el.className = `table-card status-${t.status}${sel ? ' selected' : ''}${pending ? ' pending' : ''}`
+  const irregular = t.status === 'playing' && seated.length !== t.size
+  el.className = `table-card status-${t.status}${sel ? ' selected' : ''}${pending ? ' pending' : ''}${irregular ? ' irregular' : ''}`
 
   // VP入力用: 対戦中テーブルの直近マッチを取得
   let currentMatch = null
@@ -1317,7 +1442,7 @@ const refreshTableCard = (el, t) => {
             : ''
           return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
         }).join('')
-      : '<div class="table-empty">空席</div>'
+      : Array.from({ length: t.size }, (_, i) => `<div class="table-player empty-slot">- 空席 ${i + 1}</div>`).join('')
 
   const footerHtml = pending
     ? `<button class="btn btn-confirm btn-sm" data-action="confirm-one" data-id="${t.id}">確定</button>
@@ -1330,7 +1455,7 @@ const refreshTableCard = (el, t) => {
   el.innerHTML = `
     <div class="table-header">
       <span class="table-label">${esc(t.label)}</span>
-      <span class="table-size">${t.size}人</span>
+      <span class="table-size">${t.size}人</span>${irregular ? `<span class="irregular-badge">${seated.length}/${t.size}</span>` : ''}
       <div class="table-actions no-drag">
         <button data-action="table-menu" data-id="${t.id}" title="テーブル設定">⚙</button>
       </div>
@@ -1378,7 +1503,32 @@ const finishTable = id => {
   render()
 }
 
-const finishAllTables = () => {
+// ── カスタムダイアログ（グローバル） ─────────────────────────
+let _dlgResolve = null
+
+const _openDlg = (title, bodyHTML, footerHTML) => new Promise(resolve => {
+  _dlgResolve = resolve
+  document.getElementById('dlg-title').textContent = title
+  document.getElementById('dlg-body').innerHTML    = bodyHTML
+  document.getElementById('dlg-footer').innerHTML  = footerHTML
+  document.getElementById('dlg-overlay').classList.remove('hidden')
+  setTimeout(() => document.querySelector('#dlg-body input[type=text]')?.focus(), 50)
+})
+
+const _closeDlg = val => {
+  document.getElementById('dlg-overlay').classList.add('hidden')
+  _dlgResolve?.(val ?? null)
+  _dlgResolve = null
+}
+
+const dlgConfirm = (msg, okLabel = '削除', okClass = 'btn-del') => _openDlg(
+  '確認',
+  `<p class="dlg-msg">${msg}</p>`,
+  `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
+   <button class="btn ${okClass}"   id="dlg-ok">${okLabel}</button>`
+)
+
+const finishAllTables = async () => {
   const playing = getTables().filter(t => t.status === 'playing')
   if (!playing.length) return
   let msg = `${playing.length}卓を一括終了しますか？`
@@ -1388,9 +1538,9 @@ const finishAllTables = () => {
       const m = [...matches].reverse().find(m => m.tableId === t.id)
       return m && !m.scores
     })
-    if (noScore.length) msg += `\n（${noScore.length}卓のスコアが未入力です）`
+    if (noScore.length) msg += `<br>（${noScore.length}卓のスコアが未入力です）`
   }
-  if (!confirm(msg)) return
+  if (!await dlgConfirm(msg, '終了', 'btn-del')) return
   saveUndoSnapshot(`全テーブル終了（${playing.length}卓）`)
   playing.forEach(t => {
     t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
@@ -1440,7 +1590,32 @@ const doGenerateMatching = (shuffle = false) => {
   const minFill = assignLeftover ? 1 : (settings.minFill ?? 0)
   const vpMap = (settings.enableVP && settings.vpMatching) ? buildVpMap(matches) : null
   const shouldShuffle = shuffle || matches.length === 0  // 初回は常にシャッフル
-  pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap)
+
+  // ブラケット機能：同じブラケット内でのみマッチング
+  if (settings.enableBracket) {
+    const bracketMap = {}
+    waiting.forEach(p => {
+      const key = p.bracket || ''
+      ;(bracketMap[key] ??= []).push(p)
+    })
+    const remainingTables = [...targets]
+    pendingMatches = []
+    // ブラケット付きグループを先に割り当て、なしは最後
+    const keys = Object.keys(bracketMap).sort((a, b) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))
+    for (const key of keys) {
+      const pool = bracketMap[key]
+      if (!remainingTables.length) break
+      const result = generateMatching(pool, remainingTables, allPlayers, matches, shouldShuffle, minFill, vpMap)
+      result.forEach(m => {
+        pendingMatches.push(m)
+        const idx = remainingTables.findIndex(t => t.id === m.tableId)
+        if (idx >= 0) remainingTables.splice(idx, 1)
+      })
+    }
+  } else {
+    pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap)
+  }
+
   if (!pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
   // 複数テーブル時、席移動を最小化するテーブル割り当てを選択
   if (pendingMatches.length > 1) {
@@ -1482,23 +1657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })()
 
-  // ── カスタムダイアログ ────────────────────────────────────
-  let _dlgResolve = null
-
-  const _openDlg = (title, bodyHTML, footerHTML) => new Promise(resolve => {
-    _dlgResolve = resolve
-    document.getElementById('dlg-title').textContent = title
-    document.getElementById('dlg-body').innerHTML    = bodyHTML
-    document.getElementById('dlg-footer').innerHTML  = footerHTML
-    document.getElementById('dlg-overlay').classList.remove('hidden')
-    setTimeout(() => document.querySelector('#dlg-body input[type=text]')?.focus(), 50)
-  })
-
-  const _closeDlg = val => {
-    document.getElementById('dlg-overlay').classList.add('hidden')
-    _dlgResolve?.(val ?? null)
-    _dlgResolve = null
-  }
+  // ── ダイアログ イベント ────────────────────────────────────
 
   // ダイアログ内のピル選択
   document.getElementById('dlg-body').addEventListener('click', e => {
@@ -1539,46 +1698,62 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // プレイヤー追加ダイアログ
-  const dlgAddPlayer = () => _openDlg(
-    'プレイヤーを追加',
-    `<div class="dlg-field">
-       <label>名前</label>
-       <input type="text" id="dlg-pname" placeholder="田中 太郎">
-     </div>
-     <div class="dlg-field">
-       <label>グループ（任意）</label>
-       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-         <div class="dlg-pills" id="dlg-group-pills">
-           <button type="button" class="dlg-pill active" data-val="">なし</button>
-           ${['A','B','C','D','E'].map(g => `<button type="button" class="dlg-pill" data-val="${g}">${g}</button>`).join('')}
-         </div>
-         <input type="text" id="dlg-group-custom" placeholder="またはグループ名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+  const dlgAddPlayer = () => {
+    const bracketOn = !!getSettings().enableBracket
+    const existingBrackets = [...new Set(getPlayers().map(p => p.bracket).filter(Boolean))]
+    return _openDlg(
+      'プレイヤーを追加',
+      `<div class="dlg-field">
+         <label>名前</label>
+         <input type="text" id="dlg-pname" placeholder="田中 太郎">
        </div>
-     </div>`,
-    `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
-     <button class="btn btn-ok-add"  id="dlg-ok">追加</button>`
-  ).then(ok => {
-    if (!ok) return
-    let name = document.getElementById('dlg-pname')?.value.trim()
-    if (!name) {
-      // 空なら「プレイヤーXX」形式で自動命名
-      const existing = new Set(getPlayers().map(p => p.name))
-      let maxNum = 0
-      existing.forEach(n => { const m = n.match(/^プレイヤー(\d+)$/); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)) })
-      name = 'プレイヤー' + String(maxNum + 1).padStart(2, '0')
-    }
-    const customGroup = document.getElementById('dlg-group-custom')?.value.trim()
-    const group = customGroup || document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
-    addPlayer(name, group || null)
-    render()
-  })
+       <div class="dlg-field">
+         <label>グループ（任意）</label>
+         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+           <div class="dlg-pills" id="dlg-group-pills">
+             <button type="button" class="dlg-pill active" data-val="">なし</button>
+             ${['A','B','C','D','E'].map(g => `<button type="button" class="dlg-pill" data-val="${g}">${g}</button>`).join('')}
+           </div>
+           <input type="text" id="dlg-group-custom" placeholder="またはグループ名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+         </div>
+       </div>
+       ${bracketOn ? `<div class="dlg-field">
+         <label>ブラケット（任意）</label>
+         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+           <div class="dlg-pills" id="dlg-bracket-pills">
+             <button type="button" class="dlg-pill active" data-val="">なし</button>
+             ${[...new Set(['1','2','3','4','5', ...existingBrackets])].map(b => `<button type="button" class="dlg-pill" data-val="${esc(b)}">${esc(b)}</button>`).join('')}
+           </div>
+           <input type="text" id="dlg-bracket-custom" placeholder="新規ブラケット名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+         </div>
+       </div>` : ''}`,
+      `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
+       <button class="btn btn-ok-add"  id="dlg-ok">追加</button>`
+    ).then(ok => {
+      if (!ok) return
+      let name = document.getElementById('dlg-pname')?.value.trim()
+      if (!name) {
+        const existing = new Set(getPlayers().map(p => p.name))
+        let maxNum = 0
+        existing.forEach(n => { const m = n.match(/^プレイヤー(\d+)$/); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)) })
+        name = 'プレイヤー' + String(maxNum + 1).padStart(2, '0')
+      }
+      const customGroup = document.getElementById('dlg-group-custom')?.value.trim()
+      const group = customGroup || document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
+      const customBracket = document.getElementById('dlg-bracket-custom')?.value.trim()
+      const bracket = customBracket || document.querySelector('#dlg-bracket-pills .dlg-pill.active')?.dataset.val || null
+      const p = addPlayer(name, group || null)
+      if (bracket) updatePlayer(p.id, { bracket })
+      render()
+    })
+  }
 
   // 人数で一括追加（インライン）
-  const doQuickAddPlayers = () => {
+  const doQuickAddPlayers = async () => {
     const count = parseInt(document.getElementById('quick-add-count')?.value ?? '0', 10)
     if (!count || count < 1) return
     if (count === 1) { dlgAddPlayer(); return }
-    if (!confirm(`プレイヤーを${count}人追加しますか？`)) return
+    if (!await dlgConfirm(`プレイヤーを${count}人追加しますか？`, '追加', 'btn-ok-add')) return
     const existing = new Set(getPlayers().map(p => p.name))
     let maxNum = 0
     existing.forEach(name => {
@@ -1599,6 +1774,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dlgEditPlayer = id => {
     const p = getPlayers().find(x => x.id === id)
     if (!p) return
+    const bracketOn = !!getSettings().enableBracket
+    const existingBrackets = [...new Set(getPlayers().map(x => x.bracket).filter(Boolean))]
     const pills = ['A','B','C','D','E'].map(g =>
       `<button type="button" class="dlg-pill${p.group === g ? ' active' : ''}" data-val="${g}">${g}</button>`
     ).join('')
@@ -1617,7 +1794,17 @@ document.addEventListener('DOMContentLoaded', () => {
            </div>
            <input type="text" id="dlg-group-custom-edit" placeholder="またはグループ名" value="${p.group && !'ABCDE'.includes(p.group) ? esc(p.group) : ''}" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
-       </div>`,
+       </div>
+       ${bracketOn ? `<div class="dlg-field">
+         <label>ブラケット（任意）</label>
+         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+           <div class="dlg-pills" id="dlg-bracket-pills-edit">
+             <button type="button" class="dlg-pill${!p.bracket ? ' active' : ''}" data-val="">なし</button>
+             ${[...new Set(['1','2','3','4','5', ...existingBrackets])].map(b => `<button type="button" class="dlg-pill${p.bracket === b ? ' active' : ''}" data-val="${esc(b)}">${esc(b)}</button>`).join('')}
+           </div>
+           <input type="text" id="dlg-bracket-custom-edit" placeholder="新規ブラケット名" value="${p.bracket && !existingBrackets.includes(p.bracket) ? esc(p.bracket) : ''}" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+         </div>
+       </div>` : ''}`,
       `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
        <button class="btn btn-ok-add"  id="dlg-ok">保存</button>`
     ).then(ok => {
@@ -1626,7 +1813,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!name) { toast('名前を入力してください'); return }
       const customGroup = document.getElementById('dlg-group-custom-edit')?.value.trim()
       const group = customGroup || document.querySelector('#dlg-group-pills-edit .dlg-pill.active')?.dataset.val || null
-      updatePlayer(id, { name, group: group || null })
+      const customBracket = document.getElementById('dlg-bracket-custom-edit')?.value.trim()
+      const bracket = customBracket || document.querySelector('#dlg-bracket-pills-edit .dlg-pill.active')?.dataset.val || null
+      updatePlayer(id, { name, group: group || null, bracket: bracket || null })
       render()
     })
   }
@@ -1743,14 +1932,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // 確認ダイアログ
-  const dlgConfirm = (msg, okLabel = '削除', okClass = 'btn-del') => _openDlg(
-    '確認',
-    `<p class="dlg-msg">${msg}</p>`,
-    `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
-     <button class="btn ${okClass}"   id="dlg-ok">${okLabel}</button>`
-  )
-
   // ダイアログのOK / キャンセルボタン委譲
   document.getElementById('dlg-footer').addEventListener('click', e => {
     if (e.target.id === 'dlg-ok')     _closeDlg(true)
@@ -1836,6 +2017,16 @@ document.addEventListener('DOMContentLoaded', () => {
        </div>
        <div class="dlg-field">
          <label style="cursor:pointer;">
+           <input type="checkbox" id="dlg-enable-bracket" ${s.enableBracket ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
+           ブラケット機能を使う
+         </label>
+         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 22px;">
+           同じブラケットのプレイヤー同士でのみマッチングします。<br>
+           グループの逆で「この中だけで対戦」を制限する機能です。
+         </p>
+       </div>
+       <div class="dlg-field">
+         <label style="cursor:pointer;">
            <input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
            点数を記録する
          </label>
@@ -1886,10 +2077,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!ok) return
       const v = parseInt(document.getElementById('dlg-min-fill')?.value ?? '0', 10)
       const showRound = !!document.getElementById('dlg-show-round')?.checked
+      const enableBracket = !!document.getElementById('dlg-enable-bracket')?.checked
       const enableVP = !!document.getElementById('dlg-enable-vp')?.checked
       const vpMatching = enableVP && !!document.getElementById('dlg-vp-matching')?.checked
       const theme = document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark'
-      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableVP, vpMatching, theme })
+      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, enableVP, vpMatching, theme })
       applyTheme(theme)
       render()
       toast('設定を保存しました')
@@ -1909,7 +2101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (e.target.closest('#dlg-load-sample')) {
       _closeDlg(null); setTimeout(() => {
-        dlgConfirm('サンプルデータ（プレイヤー18人、テーブル6卓）を追加しますか？<br><small>既存データが重複しない範囲で追加されます。</small>', '追加', 'btn-ok-add')
+        dlgConfirm('サンプルデータ（プレイヤー27人、テーブル8卓、オブジェクト3つ）を追加しますか？<br><small>既存データが重複しない範囲で追加されます。</small>', '追加', 'btn-ok-add')
           .then(ok => { if (ok) loadSampleData() })
       }, 100); return
     }
@@ -1919,24 +2111,32 @@ document.addEventListener('DOMContentLoaded', () => {
       'dlg-clear-matches': '対戦履歴をクリアしますか？',
       'dlg-clear-players': 'プレイヤーをすべて削除しますか？',
       'dlg-clear-tables':  'テーブルをすべて削除しますか？',
-      'dlg-clear-all':     'すべてのデータをリセットしますか？\nプレイヤー・テーブル・対戦履歴がすべて消えます。',
+      'dlg-clear-all':     'すべてのデータをリセットしますか？<br>プレイヤー・テーブル・対戦履歴がすべて消えます。',
     }
-    if (!confirm(labels[btn.id])) return
-    if (btn.id === 'dlg-clear-matches' || btn.id === 'dlg-clear-all') {
-      clearMatches()
-      pendingMatches = []
-    }
-    if (btn.id === 'dlg-clear-players' || btn.id === 'dlg-clear-all') {
-      localStorage.removeItem('mg_players')
-      checkedPlayers.clear()
-    }
-    if (btn.id === 'dlg-clear-tables' || btn.id === 'dlg-clear-all') {
-      localStorage.removeItem('mg_tables')
-      selectedTables = {}
-    }
+    const btnId = btn.id
     _closeDlg(null)
-    render()
-    toast('データをクリアしました')
+    setTimeout(() => {
+      dlgConfirm(labels[btnId], btnId === 'dlg-clear-all' ? 'リセット' : 'クリア', 'btn-del').then(ok => {
+        if (!ok) return
+        if (btnId === 'dlg-clear-matches' || btnId === 'dlg-clear-all') {
+          clearMatches()
+          pendingMatches = []
+        }
+        if (btnId === 'dlg-clear-players' || btnId === 'dlg-clear-all') {
+          localStorage.removeItem('mg_players')
+          checkedPlayers.clear()
+        }
+        if (btnId === 'dlg-clear-tables' || btnId === 'dlg-clear-all') {
+          localStorage.removeItem('mg_tables')
+          selectedTables = {}
+        }
+        if (btnId === 'dlg-clear-all') {
+          localStorage.removeItem('mg_objects')
+        }
+        render()
+        toast('データをクリアしました')
+      })
+    }, 100)
   })
 
   // テーブルメンバー手動編集ダイアログ
@@ -2093,11 +2293,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-quick-add').addEventListener('click', doQuickAddPlayers)
 
-  const doQuickAddTables = () => {
+  const doQuickAddTables = async () => {
     const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
     if (!count || count < 1) return
     if (count === 1) { dlgAddTable(); return }
-    if (!confirm(`テーブルを${count}卓追加しますか？`)) return
+    if (!await dlgConfirm(`テーブルを${count}卓追加しますか？`, '追加', 'btn-ok-add')) return
     const existing = new Set(getTables().map(t => t.label))
     let maxNum = 0
     existing.forEach(label => {
@@ -2325,17 +2525,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pasteTab === 'player') {
       const existing = new Set(getPlayers().map(p => p.name))
       const items = rows.map(cols => {
-        const name  = cols[0]
-        const group = cols[1] ? cols[1].trim() : null
-        const dup   = existing.has(name)
-        return { name, group, dup }
+        const name    = cols[0]
+        const group   = cols[1] ? cols[1].trim() : null
+        const bracket = cols[2] ? cols[2].trim() : null
+        const dup     = existing.has(name)
+        return { name, group, bracket, dup }
       })
       const valid = items.filter(i => !i.dup)
       preview.innerHTML =
         items.map(i => `
           <div class="paste-preview-row">
             <span class="paste-preview-name" style="${i.dup ? 'opacity:.4;text-decoration:line-through' : ''}">${esc(i.name)}</span>
-            ${i.group ? `<span class="paste-preview-group">${i.group}</span>` : ''}
+            ${i.group ? `<span class="paste-preview-group">${esc(i.group)}</span>` : ''}
+            ${i.bracket ? `<span class="paste-preview-bracket">${esc(i.bracket)}</span>` : ''}
             ${i.dup ? '<span class="paste-preview-err">重複スキップ</span>' : ''}
           </div>
         `).join('') +
@@ -2374,8 +2576,10 @@ document.addEventListener('DOMContentLoaded', () => {
       rows.forEach(cols => {
         const name  = cols[0]
         if (existing.has(name)) return
-        const group = cols[1] ? cols[1].trim() : null
-        addPlayer(name, group)
+        const group   = cols[1] ? cols[1].trim() : null
+        const bracket = cols[2] ? cols[2].trim() : null
+        const p = addPlayer(name, group)
+        if (bracket) updatePlayer(p.id, { bracket })
       })
     } else {
       rows.forEach(cols => {
@@ -2414,6 +2618,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === document.getElementById('paste-modal')) closePasteModal()
   })
 
+  // ── ズーム ─────────────────────────────────────────────────
+  document.getElementById('zoom-in')?.addEventListener('click', () => zoomBy(ZOOM_STEP))
+  document.getElementById('zoom-out')?.addEventListener('click', () => zoomBy(-ZOOM_STEP))
+  document.getElementById('zoom-reset')?.addEventListener('click', () => { canvasZoom = 1; applyZoom() })
+
+  const canvasWrap = document.getElementById('canvas-wrap')
+  if (canvasWrap && !isMobile()) {
+    canvasWrap.addEventListener('wheel', e => {
+      if (!e.ctrlKey) return
+      e.preventDefault()
+      zoomBy(e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP)
+    }, { passive: false })
+  }
+
   // ── その他ボタン ──────────────────────────────────────────
   document.getElementById('btn-undo').addEventListener('click', undo)
   document.getElementById('btn-finish-all').addEventListener('click', finishAllTables)
@@ -2423,21 +2641,43 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-cancel-match').addEventListener('click', doCancelMatching)
 
   const loadSampleData = () => {
+    // 27人: [名前, グループ, ブラケット]
     const samplePlayers = [
-      ['田中 太郎', 'A'], ['鈴木 花子', 'A'], ['佐藤 健', 'A'],
-      ['伊藤 美咲', 'A'], ['渡辺 拓也', 'B'], ['山本 さくら', 'B'],
-      ['中村 俊介', 'B'], ['小林 あかり', 'B'], ['加藤 誠', 'C'],
-      ['吉田 ひより', 'C'], ['山田 大輔', 'C'], ['松本 彩', 'C'],
-      ['井上 隼人', 'A'], ['木村 なな', 'B'], ['林 翔太', 'C'],
-      ['清水 ゆい', 'A'], ['池田 颯', 'B'], ['西村 葵', 'C'],
+      ['田中 太郎', 'A', '1'],   ['鈴木 花子', 'A', '1'],   ['佐藤 健', 'A', '1'],
+      ['伊藤 美咲', 'A', '1'],   ['渡辺 拓也', 'B', '1'],   ['山本 さくら', 'B', '1'],
+      ['中村 俊介', 'B', '1'],   ['小林 あかり', 'B', '2'],  ['加藤 誠', 'C', '2'],
+      ['吉田 ひより', 'C', '2'], ['山田 大輔', 'C', '2'],    ['松本 彩', 'C', '2'],
+      ['井上 隼人', 'A', '2'],   ['木村 なな', 'B', '2'],    ['林 翔太', 'C', '3'],
+      ['清水 ゆい', 'A', '3'],   ['池田 颯', 'B', '3'],      ['西村 葵', 'C', '3'],
+      ['高橋 蓮', 'A', '3'],     ['藤田 結衣', 'B', '3'],    ['岡田 悠真', 'C', '3'],
+      ['石井 凛', 'A', '1'],     ['前田 陽翔', 'B', '2'],    ['村上 咲良', 'C', '1'],
+      ['原田 湊', 'A', '2'],     ['坂本 芽依', 'B', '3'],    ['青木 樹', 'C', '3'],
     ]
     const existing = new Set(getPlayers().map(p => p.name))
-    samplePlayers.forEach(([name, group]) => {
-      if (!existing.has(name)) addPlayer(name, group)
+    samplePlayers.forEach(([name, group, bracket]) => {
+      if (!existing.has(name)) {
+        const p = addPlayer(name, group)
+        if (bracket) updatePlayer(p.id, { bracket })
+      }
     })
+    // 8テーブル
     const existingTables = getTables().map(t => t.label)
-    ;['1', '2', '3', '4', '5', '6'].forEach(n => {
-      if (!existingTables.includes(n)) addTable(n, 4)
+    for (let i = 1; i <= 8; i++) {
+      const label = 'テーブル' + i
+      if (!existingTables.includes(label)) addTable(label, 4)
+    }
+    // オブジェクト配置
+    const existingObjs = getRoomObjects().map(o => o.label)
+    const sampleObjs = [
+      ['受付',     '#43e97b', 336, 84,  28,  0],
+      ['モニター', '#4fc3f7', 168, 112, 560, 0],
+      ['壁',       '#9e9e9e', 756, 84,  28,  560],
+    ]
+    sampleObjs.forEach(([label, color, w, h, x, y]) => {
+      if (!existingObjs.includes(label)) {
+        const obj = addRoomObject(label, color, w, h)
+        updateRoomObject(obj.id, { x, y })
+      }
     })
     render()
   }

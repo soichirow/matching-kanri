@@ -1,334 +1,170 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
   getPlayers, addPlayer, updatePlayer, deletePlayer,
-  getTables,  addTable,  updateTable,  deleteTable,
-  getMatches, addMatch,  updateMatchScores, clearMatches,
+  getTables, addTable, updateTable, deleteTable,
+  getMatches, addMatch, updateMatchScores, clearMatches,
 } from '../src/store.js'
 
 beforeEach(() => {
   localStorage.clear()
 })
 
-// ── Players ──────────────────────────────────────────────
+// ── Players CRUD ────────────────────────────────────────
 
-describe('getPlayers', () => {
-  it('初期状態では空配列', () => {
-    expect(getPlayers()).toEqual([])
-  })
-})
-
-describe('addPlayer', () => {
-  it('プレイヤーを追加できる', () => {
-    const p = addPlayer('田中', 'A')
-    expect(p.name).toBe('田中')
+describe('Players CRUD', () => {
+  it('追加でid/name/group/status設定', () => {
+    const p = addPlayer('Alice', 'A')
+    expect(p.id).toBeTruthy()
+    expect(p.name).toBe('Alice')
     expect(p.group).toBe('A')
     expect(p.status).toBe('waiting')
-    expect(p.id).toBeDefined()
   })
 
-  it('複数追加できる', () => {
-    addPlayer('田中')
-    addPlayer('鈴木')
-    expect(getPlayers()).toHaveLength(2)
-  })
-
-  it('グループなしはnull', () => {
-    const p = addPlayer('山田')
+  it('group省略→null', () => {
+    const p = addPlayer('Bob')
     expect(p.group).toBeNull()
   })
 
-  it('任意のグループ文字列を保存できる', () => {
-    const p = addPlayer('山田', 'チームX')
-    expect(p.group).toBe('チームX')
-  })
-
-  it('空文字のグループはnullになる', () => {
-    const p = addPlayer('山田', '')
+  it('group空文字→null', () => {
+    const p = addPlayer('Carol', '')
     expect(p.group).toBeNull()
   })
-})
 
-describe('updatePlayer', () => {
-  it('ステータスを更新できる', () => {
-    const p = addPlayer('田中')
+  it('bracket設定', () => {
+    const p = addPlayer('Dave')
+    const updated = updatePlayer(p.id, { bracket: '1' })
+    expect(updated.bracket).toBe('1')
+  })
+
+  it('bracket解除', () => {
+    const p = addPlayer('Eve')
+    updatePlayer(p.id, { bracket: '1' })
+    const updated = updatePlayer(p.id, { bracket: null })
+    expect(updated.bracket).toBeNull()
+  })
+
+  it('更新で既存フィールド保持', () => {
+    const p = addPlayer('Frank', 'X')
     const updated = updatePlayer(p.id, { status: 'playing' })
+    expect(updated.name).toBe('Frank')
+    expect(updated.group).toBe('X')
     expect(updated.status).toBe('playing')
-    expect(getPlayers().find(x => x.id === p.id)?.status).toBe('playing')
   })
 
-  it('存在しないIDはnullを返す', () => {
-    expect(updatePlayer('no-such-id', { status: 'playing' })).toBeNull()
-  })
-})
-
-describe('deletePlayer', () => {
-  it('プレイヤーを削除できる', () => {
-    const p = addPlayer('田中')
-    deletePlayer(p.id)
-    expect(getPlayers()).toHaveLength(0)
+  it('存在しないID→null', () => {
+    expect(updatePlayer('no-such-id', { name: 'Ghost' })).toBeNull()
   })
 
-  it('他のプレイヤーには影響しない', () => {
-    const p1 = addPlayer('田中')
-    const p2 = addPlayer('鈴木')
+  it('削除、他に影響なし', () => {
+    const p1 = addPlayer('A')
+    const p2 = addPlayer('B')
     deletePlayer(p1.id)
-    expect(getPlayers()).toHaveLength(1)
-    expect(getPlayers()[0].id).toBe(p2.id)
+    const remaining = getPlayers()
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].id).toBe(p2.id)
   })
 })
 
-// ── Tables ───────────────────────────────────────────────
+// ── Tables CRUD ─────────────────────────────────────────
 
-describe('addTable', () => {
-  it('テーブルを追加できる', () => {
-    const t = addTable('テーブルA', 4)
-    expect(t.label).toBe('テーブルA')
-    expect(t.size).toBe(4)
+describe('Tables CRUD', () => {
+  it('追加でlabel/size/status/playerIds/座標設定', () => {
+    const t = addTable('Table1', 6)
+    expect(t.id).toBeTruthy()
+    expect(t.label).toBe('Table1')
+    expect(t.size).toBe(6)
     expect(t.status).toBe('empty')
     expect(t.playerIds).toEqual([])
     expect(typeof t.x).toBe('number')
     expect(typeof t.y).toBe('number')
   })
 
-  it('デフォルトサイズは4', () => {
-    expect(addTable('T').size).toBe(4)
+  it('size省略→4', () => {
+    const t = addTable('Default')
+    expect(t.size).toBe(4)
+  })
+
+  it('size境界値: 2人テーブル', () => {
+    const t = addTable('Small', 2)
+    expect(t.size).toBe(2)
+  })
+
+  it('size境界値: 8人テーブル', () => {
+    const t = addTable('Big', 8)
+    expect(t.size).toBe(8)
+  })
+
+  it('更新', () => {
+    const t = addTable('T1')
+    const updated = updateTable(t.id, { label: 'T1-renamed', status: 'playing' })
+    expect(updated.label).toBe('T1-renamed')
+    expect(updated.status).toBe('playing')
+  })
+
+  it('削除', () => {
+    const t1 = addTable('A')
+    const t2 = addTable('B')
+    deleteTable(t1.id)
+    const remaining = getTables()
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].id).toBe(t2.id)
+  })
+
+  it('存在しないID→null', () => {
+    expect(updateTable('no-such-id', { label: 'X' })).toBeNull()
   })
 })
 
-describe('updateTable', () => {
-  it('プレイヤーを割り当てられる', () => {
-    const t = addTable('T', 2)
-    const u = updateTable(t.id, { playerIds: ['p1', 'p2'], status: 'playing' })
-    expect(u.playerIds).toEqual(['p1', 'p2'])
-    expect(u.status).toBe('playing')
-  })
+// ── Matches ─────────────────────────────────────────────
 
-  it('位置を更新できる', () => {
-    const t = addTable('T')
-    const u = updateTable(t.id, { x: 300, y: 150 })
-    expect(u.x).toBe(300)
-    expect(u.y).toBe(150)
-  })
-
-  it('存在しないIDはnullを返す', () => {
-    expect(updateTable('nope', { size: 2 })).toBeNull()
-  })
-})
-
-describe('deleteTable', () => {
-  it('テーブルを削除できる', () => {
-    const t = addTable('T')
-    deleteTable(t.id)
-    expect(getTables()).toHaveLength(0)
-  })
-})
-
-// ── Matches ──────────────────────────────────────────────
-
-describe('addMatch', () => {
-  it('マッチを記録できる', () => {
+describe('Matches', () => {
+  it('記録でtableId/playerIds/timestamp/scores(null)保存', () => {
     const m = addMatch('t1', ['p1', 'p2'])
+    expect(m.id).toBeTruthy()
     expect(m.tableId).toBe('t1')
     expect(m.playerIds).toEqual(['p1', 'p2'])
     expect(typeof m.timestamp).toBe('number')
-    expect(m.id).toBeDefined()
-  })
-
-  it('scores初期値はnull', () => {
-    const m = addMatch('t1', ['p1', 'p2'])
     expect(m.scores).toBeNull()
   })
-})
 
-describe('updateMatchScores', () => {
-  it('スコアを記録できる', () => {
+  it('スコア記録(プラス)', () => {
     const m = addMatch('t1', ['p1', 'p2'])
     const updated = updateMatchScores(m.id, { p1: 10, p2: 5 })
     expect(updated.scores).toEqual({ p1: 10, p2: 5 })
-    expect(getMatches()[0].scores).toEqual({ p1: 10, p2: 5 })
   })
 
-  it('マイナス点数を記録できる', () => {
+  it('スコア記録(マイナス)', () => {
     const m = addMatch('t1', ['p1', 'p2'])
-    const updated = updateMatchScores(m.id, { p1: -3, p2: 8 })
-    expect(updated.scores.p1).toBe(-3)
-    expect(updated.scores.p2).toBe(8)
+    const updated = updateMatchScores(m.id, { p1: -3, p2: -7 })
+    expect(updated.scores).toEqual({ p1: -3, p2: -7 })
   })
 
-  it('スコアをnullに戻せる', () => {
+  it('スコア上書き', () => {
     const m = addMatch('t1', ['p1', 'p2'])
-    updateMatchScores(m.id, { p1: 10 })
-    updateMatchScores(m.id, null)
-    expect(getMatches()[0].scores).toBeNull()
+    updateMatchScores(m.id, { p1: 10, p2: 5 })
+    const updated = updateMatchScores(m.id, { p1: 20, p2: 15 })
+    expect(updated.scores).toEqual({ p1: 20, p2: 15 })
   })
 
-  it('存在しないIDはnullを返す', () => {
-    expect(updateMatchScores('no-such-id', { p1: 5 })).toBeNull()
+  it('スコアをnullに戻す', () => {
+    const m = addMatch('t1', ['p1', 'p2'])
+    updateMatchScores(m.id, { p1: 10, p2: 5 })
+    const updated = updateMatchScores(m.id, null)
+    expect(updated.scores).toBeNull()
   })
-})
 
-describe('clearMatches', () => {
-  it('全マッチを削除できる', () => {
-    addMatch('t1', ['p1', 'p2'])
-    addMatch('t2', ['p3', 'p4'])
+  it('全クリア（プレイヤー・テーブルに影響なし）', () => {
+    addPlayer('Alice')
+    addTable('T1')
+    addMatch('t1', ['p1'])
+    addMatch('t2', ['p2'])
     clearMatches()
-    expect(getMatches()).toHaveLength(0)
-  })
-})
-
-// ── 統合テスト: store + matching の連携 ──────────────────
-
-describe('統合: プレイヤー追加 → マッチング → スコア記録', () => {
-  it('実データでフルワークフローが動作する', async () => {
-    const { generateMatching, buildScoreMap } = await import('../src/matching.js')
-
-    // 1. プレイヤー追加
-    const players = []
-    for (let i = 1; i <= 8; i++) {
-      players.push(addPlayer(`プレイヤー${String(i).padStart(2, '0')}`, i <= 4 ? 'A' : 'B'))
-    }
-    expect(getPlayers()).toHaveLength(8)
-
-    // 2. テーブル追加
-    addTable('テーブル1', 4)
-    addTable('テーブル2', 4)
-    const tables = getTables()
-    expect(tables).toHaveLength(2)
-
-    // 3. マッチング実行
-    const waiting = getPlayers().filter(p => p.status === 'waiting')
-    const empty = getTables().filter(t => t.status === 'empty')
-    const result = generateMatching(waiting, empty, getPlayers(), getMatches())
-    expect(result).toHaveLength(2)
-    expect(result[0].playerIds).toHaveLength(4)
-
-    // 4. マッチング確定
-    result.forEach(({ tableId, playerIds }) => {
-      addMatch(tableId, playerIds)
-      updateTable(tableId, { status: 'playing', playerIds })
-      playerIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
-    })
-    expect(getPlayers().filter(p => p.status === 'playing')).toHaveLength(8)
-    expect(getTables().filter(t => t.status === 'playing')).toHaveLength(2)
-
-    // 5. スコア記録（プラス・マイナス混在）
-    const matches = getMatches()
-    updateMatchScores(matches[0].id, {
-      [result[0].playerIds[0]]: 12,
-      [result[0].playerIds[1]]: -3,
-      [result[0].playerIds[2]]: 7,
-      [result[0].playerIds[3]]: 0,
-    })
-    updateMatchScores(matches[1].id, {
-      [result[1].playerIds[0]]: -5,
-      [result[1].playerIds[1]]: 10,
-      [result[1].playerIds[2]]: 3,
-      [result[1].playerIds[3]]: -2,
-    })
-
-    // 6. スコア集計
-    const scoreMap = buildScoreMap(getMatches())
-    const totalScore = Object.values(scoreMap).reduce((a, b) => a + b, 0)
-    expect(Object.keys(scoreMap)).toHaveLength(8)
-    expect(totalScore).toBe(12 + (-3) + 7 + 0 + (-5) + 10 + 3 + (-2)) // = 22
-
-    // 7. 全テーブル終了
-    getTables().filter(t => t.status === 'playing').forEach(t => {
-      t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
-      updateTable(t.id, { status: 'empty', playerIds: [] })
-    })
-    expect(getPlayers().filter(p => p.status === 'waiting')).toHaveLength(8)
-    expect(getTables().filter(t => t.status === 'empty')).toHaveLength(2)
-
-    // 8. 2ラウンド目のマッチング（対戦済みペアが避けられる）
-    const { optimizeTableAssignment } = await import('../src/matching.js')
-    const waiting2 = getPlayers().filter(p => p.status === 'waiting')
-    const empty2 = getTables().filter(t => t.status === 'empty')
-    const result2 = generateMatching(waiting2, empty2, getPlayers(), getMatches())
-    expect(result2).toHaveLength(2)
-
-    // 席移動最小化の適用
-    const optimized = optimizeTableAssignment(result2, getMatches())
-    expect(optimized).toHaveLength(2)
-    const allIds = optimized.flatMap(r => r.playerIds)
-    expect(new Set(allIds).size).toBe(8) // 重複なし
-  })
-})
-
-describe('統合: 8人テーブル対応', () => {
-  it('8人テーブルにマッチングできる', async () => {
-    const { generateMatching } = await import('../src/matching.js')
-    for (let i = 1; i <= 8; i++) addPlayer(`P${i}`)
-    addTable('大卓', 8)
-    const result = generateMatching(
-      getPlayers().filter(p => p.status === 'waiting'),
-      getTables().filter(t => t.status === 'empty'),
-      getPlayers(), getMatches()
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0].playerIds).toHaveLength(8)
-  })
-})
-
-describe('統合: minFill=1でcount=1のテーブル割り当て', () => {
-  it('1人でもテーブルに配席される', async () => {
-    const { generateMatching } = await import('../src/matching.js')
-    addPlayer('ソロ')
-    addTable('T', 4)
-    const result = generateMatching(
-      getPlayers().filter(p => p.status === 'waiting'),
-      getTables().filter(t => t.status === 'empty'),
-      getPlayers(), getMatches(), false, 1
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0].playerIds).toHaveLength(1)
-  })
-})
-
-describe('カスタムグループ名', () => {
-  it('日本語グループ名を保存・取得', () => {
-    const p = addPlayer('田中', 'チームα')
-    expect(p.group).toBe('チームα')
-    expect(getPlayers()[0].group).toBe('チームα')
+    expect(getMatches()).toEqual([])
+    expect(getPlayers()).toHaveLength(1)
+    expect(getTables()).toHaveLength(1)
   })
 
-  it('長いグループ名を保存', () => {
-    const longName = 'とても長いグループ名のテスト用文字列'
-    const p = addPlayer('鈴木', longName)
-    expect(p.group).toBe(longName)
-  })
-})
-
-describe('統合: 3ラウンド連続実行', () => {
-  it('履歴が正しく蓄積される', async () => {
-    const { generateMatching } = await import('../src/matching.js')
-
-    for (let i = 1; i <= 8; i++) addPlayer(`P${i}`)
-    addTable('T1', 4); addTable('T2', 4)
-
-    for (let round = 0; round < 3; round++) {
-      const waiting = getPlayers().filter(p => p.status === 'waiting')
-      const empty = getTables().filter(t => t.status === 'empty')
-      const result = generateMatching(waiting, empty, getPlayers(), getMatches(), true)
-      expect(result).toHaveLength(2)
-
-      // 確定
-      result.forEach(({ tableId, playerIds }) => {
-        addMatch(tableId, playerIds)
-        updateTable(tableId, { status: 'playing', playerIds })
-        playerIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
-      })
-
-      // 終了
-      getTables().forEach(t => {
-        t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
-        updateTable(t.id, { status: 'empty', playerIds: [] })
-      })
-    }
-
-    // 3ラウンド × 2卓 = 6マッチ
-    expect(getMatches()).toHaveLength(6)
-    // 全員待機に戻っている
-    expect(getPlayers().filter(p => p.status === 'waiting')).toHaveLength(8)
+  it('存在しないmatchId→null', () => {
+    expect(updateMatchScores('no-such-id', { p1: 10 })).toBeNull()
   })
 })

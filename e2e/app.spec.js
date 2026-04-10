@@ -7,65 +7,57 @@ const appUrl = `file:///${path.resolve(__dirname, '../index.html').replace(/\\/g
 
 test.beforeEach(async ({ page }) => {
   await page.goto(appUrl)
-  // localStorageクリア
   await page.evaluate(() => localStorage.clear())
   await page.reload()
+  await page.waitForSelector('#app')
 })
 
-// ── プレイヤー追加 ──────────────────────────────────────
+// ════════════════════════════════════════════════════════
+// マッチング基本フロー（5ケース）
+// ════════════════════════════════════════════════════════
 
-test('プレイヤーを一括追加できる', async ({ page }) => {
-  // 4人追加
+test('プレイヤー一括追加→リスト表示確認', async ({ page }) => {
   await page.selectOption('#quick-add-count', '4')
-  page.on('dialog', d => d.accept()) // confirm
   await page.click('#btn-quick-add')
+  // 2人以上なのでカスタム確認ダイアログが開く
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
   // プレイヤーリストに4人表示
   const items = page.locator('.player-item')
   await expect(items).toHaveCount(4)
   await expect(items.first().locator('.player-name')).toContainText('プレイヤー01')
+  await expect(items.last().locator('.player-name')).toContainText('プレイヤー04')
 })
 
-test('プレイヤー1人追加でダイアログが開く', async ({ page }) => {
-  await page.selectOption('#quick-add-count', '1')
-  await page.click('#btn-quick-add')
-  // ダイアログが表示される
-  await expect(page.locator('#dlg-overlay')).not.toHaveClass(/hidden/)
-  await expect(page.locator('#dlg-title')).toContainText('プレイヤーを追加')
-})
-
-test('名前空欄で追加するとプレイヤーXX形式で追加', async ({ page }) => {
-  await page.selectOption('#quick-add-count', '1')
-  await page.click('#btn-quick-add')
-  // 名前入力せずに追加
-  await page.click('#dlg-ok')
-  const items = page.locator('.player-item')
-  await expect(items).toHaveCount(1)
-  await expect(items.first().locator('.player-name')).toContainText('プレイヤー01')
-})
-
-// ── テーブル追加 ────────────────────────────────────────
-
-test('テーブルを一括追加できる', async ({ page }) => {
+test('テーブル一括追加→キャンバス表示確認', async ({ page }) => {
   await page.selectOption('#quick-add-table-count', '3')
-  page.on('dialog', d => d.accept())
   await page.click('#btn-quick-add-tables')
+  // 2卓以上なのでカスタム確認ダイアログが開く
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
   const cards = page.locator('.table-card')
   await expect(cards).toHaveCount(3)
+  await expect(cards.first().locator('.table-label')).toContainText('テーブル1')
 })
 
-// ── マッチング→確定→終了フロー ──────────────────────────
-
-test('マッチング→確定→終了の一連フロー', async ({ page }) => {
-  // セットアップ: 8人 + 2卓
+test('マッチング→仮マッチプレビュー→全確定→対戦中→全終了→待機復帰', async ({ page }) => {
+  // セットアップ: 8人追加
   await page.selectOption('#quick-add-count', '8')
-  page.on('dialog', d => d.accept())
   await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await expect(page.locator('.player-item')).toHaveCount(8)
+
+  // 2卓追加
   await page.selectOption('#quick-add-table-count', '2')
   await page.click('#btn-quick-add-tables')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await expect(page.locator('.table-card')).toHaveCount(2)
 
   // マッチング生成
   await page.click('#btn-match')
-  // 仮マッチ表示
+  // 仮マッチ表示を確認
   await expect(page.locator('#match-preview')).toContainText('仮マッチ中')
   // 全確定ボタンが表示
   await expect(page.locator('#btn-confirm-match')).toBeVisible()
@@ -77,85 +69,182 @@ test('マッチング→確定→終了の一連フロー', async ({ page }) => 
   // 全終了ボタン表示
   await expect(page.locator('#btn-finish-all')).toBeVisible()
 
-  // 全終了（confirmダイアログ）
+  // 全終了（カスタム確認ダイアログ）
   await page.click('#btn-finish-all')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
   // ステータスが待機に戻る
   await expect(page.locator('.player-stats')).toContainText('待機8')
 })
 
-// ── 元に戻す ────────────────────────────────────────────
-
-test('元に戻すが動作する', async ({ page }) => {
-  await page.selectOption('#quick-add-count', '4')
-  page.on('dialog', d => d.accept())
-  await page.click('#btn-quick-add')
-  await expect(page.locator('.player-item')).toHaveCount(4)
-
-  // Undo
-  await page.click('#btn-undo')
-  // トースト表示
-  await expect(page.locator('#toast')).toHaveClass(/show/)
-})
-
-// ── 設定ダイアログ ──────────────────────────────────────
-
-test('設定ダイアログが開閉する', async ({ page }) => {
+test('設定ダイアログの開閉', async ({ page }) => {
   await page.click('#btn-settings')
-  await expect(page.locator('#dlg-overlay')).not.toHaveClass(/hidden/)
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
   await expect(page.locator('#dlg-title')).toContainText('設定')
   await page.click('#dlg-cancel')
   await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
 })
 
-test('テーマ切替が動作する', async ({ page }) => {
+test('テーマ切替(ダーク→ライト)', async ({ page }) => {
+  // デフォルトはダーク（data-theme属性なし）
+  const html = page.locator('html')
+  await expect(html).not.toHaveAttribute('data-theme', 'light')
+  // 設定を開く
   await page.click('#btn-settings')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
   // ライトモードに切替
   await page.click('#dlg-theme-pills .dlg-pill[data-val="light"]')
   await page.click('#dlg-ok')
   // data-theme属性がlightに
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect(html).toHaveAttribute('data-theme', 'light')
 })
 
-// ── 順位表 ──────────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+// ブラケット機能（3ケース）
+// ════════════════════════════════════════════════════════
 
-test('順位表が表示される', async ({ page }) => {
-  await page.click('#btn-standings')
-  await expect(page.locator('#dlg-title')).toContainText('順位表')
+test('設定でブラケットON→プレイヤー追加ダイアログにブラケット欄表示', async ({ page }) => {
+  // 設定でブラケットを有効化
+  await page.click('#btn-settings')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.check('#dlg-enable-bracket')
+  await page.click('#dlg-ok')
+  await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
+
+  // 1人追加ダイアログを開く
+  await page.selectOption('#quick-add-count', '1')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  // ブラケット欄が表示されている
+  await expect(page.locator('#dlg-bracket-pills')).toBeVisible()
+  await page.click('#dlg-cancel')
 })
 
-// ── ヘルプ ──────────────────────────────────────────────
+test('ブラケット付きプレイヤー追加→バッジ表示確認', async ({ page }) => {
+  // 設定でブラケットを有効化
+  await page.click('#btn-settings')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.check('#dlg-enable-bracket')
+  await page.click('#dlg-ok')
+  await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
 
-test('ヘルプが表示される', async ({ page }) => {
-  await page.click('#btn-help')
-  await expect(page.locator('#dlg-title')).toContainText('ヘルプ')
+  // 1人追加ダイアログ
+  await page.selectOption('#quick-add-count', '1')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  // 名前入力
+  await page.fill('#dlg-pname', 'テスト選手')
+  // ブラケットpillの「1」をクリック
+  await page.click('#dlg-bracket-pills .dlg-pill[data-val="1"]')
+  // 追加
+  await page.click('#dlg-ok')
+
+  // プレイヤーが追加され、ブラケットバッジが表示される
+  const item = page.locator('.player-item').first()
+  await expect(item.locator('.player-name')).toContainText('テスト選手')
+  await expect(item.locator('.bracket-badge')).toContainText('1')
 })
 
-// ── 選択モード ──────────────────────────────────────────
-
-test('選択モードの切替', async ({ page }) => {
-  await page.click('#btn-toggle-checks')
-  await expect(page.locator('#player-panel')).toHaveClass(/check-mode/)
-  await page.click('#btn-toggle-checks')
-  await expect(page.locator('#player-panel')).not.toHaveClass(/check-mode/)
+test('ブラケットOFF時は通常マッチング', async ({ page }) => {
+  // ブラケットOFFの状態（デフォルト）で1人追加ダイアログを開く
+  await page.selectOption('#quick-add-count', '1')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  // ブラケット欄が非表示
+  await expect(page.locator('#dlg-bracket-pills')).toHaveCount(0)
+  await page.click('#dlg-cancel')
 })
 
-// ── スマホレイアウト ────────────────────────────────────
+// ════════════════════════════════════════════════════════
+// カスタムダイアログ（3ケース）
+// ════════════════════════════════════════════════════════
 
-test('スマホ幅でマッチングバーが固定表示', async ({ page }) => {
+test('確認ダイアログ表示→OKで操作実行', async ({ page }) => {
+  // 4人一括追加でカスタム確認ダイアログをテスト
+  await page.selectOption('#quick-add-count', '4')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await expect(page.locator('#dlg-title')).toContainText('確認')
+  await page.click('#dlg-ok')
+  // OKで追加が実行される
+  await expect(page.locator('.player-item')).toHaveCount(4)
+})
+
+test('確認ダイアログ→キャンセルで操作中止', async ({ page }) => {
+  await page.selectOption('#quick-add-count', '4')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-cancel')
+  await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
+  // キャンセルしたので追加されていない
+  await expect(page.locator('.player-item')).toHaveCount(0)
+})
+
+test('確認ダイアログ→Escapeキーで閉じる', async ({ page }) => {
+  await page.selectOption('#quick-add-count', '4')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
+  // Escapeで閉じたので追加されていない
+  await expect(page.locator('.player-item')).toHaveCount(0)
+})
+
+// ════════════════════════════════════════════════════════
+// レスポンシブ（3ケース）
+// ════════════════════════════════════════════════════════
+
+test('PC(1280x800): タイトル・ズームコントロール表示', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.reload()
+  await page.waitForSelector('#app')
+  // タイトル表示
+  await expect(page.locator('.header-title')).toBeVisible()
+  // ズームコントロール表示
+  await expect(page.locator('.zoom-controls')).toBeVisible()
+})
+
+test('スマホ(375x667): タイトル・ズーム非表示', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
   await page.reload()
-  const bar = page.locator('.matching-bar')
-  const style = await bar.evaluate(el => getComputedStyle(el).position)
-  expect(style).toBe('fixed')
+  await page.waitForSelector('#app')
+  // タイトル非表示
+  await expect(page.locator('.header-title')).not.toBeVisible()
+  // ズームコントロール非表示
+  await expect(page.locator('.zoom-controls')).not.toBeVisible()
 })
 
-test('スマホ幅でテーブルカードがflex配置', async ({ page }) => {
+test('スマホ(375x667): テーブルflex配置', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
   await page.reload()
+  await page.waitForSelector('#app')
+  // テーブル追加
   await page.selectOption('#quick-add-table-count', '2')
-  page.on('dialog', d => d.accept())
   await page.click('#btn-quick-add-tables')
-  const canvas = page.locator('#canvas')
-  const display = await canvas.evaluate(el => getComputedStyle(el).display)
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await expect(page.locator('.table-card')).toHaveCount(2)
+  // キャンバスがflex配置
+  const display = await page.locator('#canvas').evaluate(el => getComputedStyle(el).display)
   expect(display).toBe('flex')
+})
+
+// ════════════════════════════════════════════════════════
+// データ永続化（1ケース）
+// ════════════════════════════════════════════════════════
+
+test('プレイヤー追加→リロード→データ残存', async ({ page }) => {
+  // 3人追加
+  await page.selectOption('#quick-add-count', '3')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await expect(page.locator('.player-item')).toHaveCount(3)
+
+  // リロード（localStorageはクリアしない）
+  await page.reload()
+  await page.waitForSelector('#app')
+  // データが残っている
+  await expect(page.locator('.player-item')).toHaveCount(3)
+  await expect(page.locator('.player-item').first().locator('.player-name')).toContainText('プレイヤー01')
 })

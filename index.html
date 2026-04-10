@@ -271,9 +271,8 @@ body {
 .table-footer {
   padding: 6px 10px; border-top: 1px solid var(--border);
   min-height: 34px; display: flex; align-items: center;
+  gap: 4px; flex-wrap: wrap;
 }
-
-.table-footer { gap: 4px; flex-wrap: wrap; }
 
 .btn-finish {
   font-size: 12px; padding: 6px 12px; min-height: 34px;
@@ -289,14 +288,13 @@ body {
 }
 .btn-disband:hover { background: var(--surface2); color: var(--text); }
 
-.lock-btn.locked { color: var(--warning) !important; }
 
 .select-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); cursor: pointer; }
 .select-check input { accent-color: var(--accent); cursor: pointer; }
 
 /* マッチングバー */
 .matching-bar {
-  height: 112px; background: var(--surface);
+  height: auto; min-height: 52px; background: var(--surface);
   border-top: 1px solid var(--border); flex-shrink: 0; z-index: 10;
 }
 .matching-bar-inner {
@@ -331,9 +329,6 @@ body {
 .btn-confirm  { background: var(--success); color: #111; }
 .btn-sm       { padding: 3px 10px; font-size: 12px; }
 .btn-cancel-m { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-exit     { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-sample   { background: var(--surface2); color: var(--text-dim); border: 1px dashed var(--border); }
-.btn-obj { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
 .btn-ok-add   { background: var(--accent); color: white; }
 .btn-del      { background: var(--danger); color: white; }
 
@@ -622,7 +617,7 @@ body {
           <option value="8">8</option><option value="10">10</option><option value="12">12</option>
           <option value="16">16</option><option value="20">20</option>
         </select>
-        <button id="btn-quick-add-tables" class="btn btn-primary" style="padding:6px 8px;font-size:12px;" title="テーブルを一括追加">＋ 一括</button>
+        <button id="btn-quick-add-tables" class="btn btn-primary" style="padding:6px 8px;font-size:12px;" title="テーブルを一括追加">＋一括追加</button>
       </span>
       <span style="flex:1;"></span>
       <button id="btn-theme"         class="btn btn-monitor" title="テーマ切替" style="padding:6px 10px;">🌙</button>
@@ -646,7 +641,7 @@ body {
           <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
           <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
         </select>
-        <button class="paste-panel-btn" id="btn-quick-add" style="flex:1;">＋ 人数で追加</button>
+        <button class="paste-panel-btn" id="btn-quick-add" style="flex:1;">＋ まとめて追加</button>
       </div>
       <div id="player-list"></div>
     </aside>
@@ -666,11 +661,8 @@ body {
       </label>
       <button id="btn-regen-match"   class="btn btn-regen"    style="display:none">🔄 再マッチング</button>
       <button id="btn-confirm-match" class="btn btn-confirm"  style="display:none">✅ 全確定</button>
-      <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none">✕ 全取消</button>
+      <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none">✕ キャンセル</button>
       <div id="match-preview" style="margin-left:8px;"></div>
-      <span class="hint" style="margin-left:auto;">
-        💡 プレイヤーにチェック＝対象を絞る　／　テーブルを選択＝卓を絞る　／　Ctrl+Z で元に戻す
-      </span>
     </div>
   </footer>
 </div>
@@ -1795,13 +1787,13 @@ document.addEventListener('DOMContentLoaded', () => {
        </div>
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
-         <label>ツール</label>
+         <label>その他</label>
          <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
            <button type="button" class="btn btn-cancel-m" id="dlg-add-obj" style="text-align:left;">
-             📦 オブジェクトを追加
+             📦 配置物を追加（壁・モニターなど）
            </button>
            <button type="button" class="btn btn-cancel-m" id="dlg-load-sample" style="text-align:left;">
-             🎲 サンプルデータを追加
+             🎲 サンプルデータで試す
            </button>
          </div>
        </div>
@@ -1898,7 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <input type="checkbox" value="${p.id}" ${checked ? 'checked' : ''}
           style="accent-color:var(--accent);width:16px;height:16px;">
         <span>${esc(p.name)}${p.group ? ` <span class="group-badge">${esc(p.group)}</span>` : ''}</span>
-        <span style="font-size:11px;color:var(--text-dim);">${{ waiting:'待機', playing:'対戦中', break:'休憩', left:'退出' }[p.status] ?? p.status}</span>
+        <span style="font-size:11px;color:var(--text-dim);">${statusLabel(p.status)}</span>
       </label>`
     }).join('')
     return _openDlg(
@@ -2001,7 +1993,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       render()
-      toast(`${added}卓のテーブルを追加しました`)
+      toast(`テーブルを${added}卓追加しました`)
     })
   }
   document.getElementById('btn-quick-add-tables').addEventListener('click', doQuickAddTables)
@@ -2017,7 +2009,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sizeOptions = [2, 3, 4]
       const nextSize = sizeOptions[(sizeOptions.indexOf(tbl.size) + 1) % sizeOptions.length]
       _openDlg(
-        `${esc(tbl.label)} の設定`,
+        `${esc(tbl.label)} — テーブル操作`,
         `<div style="display:flex;flex-direction:column;gap:8px;">
            <button type="button" class="btn btn-cancel-m" id="dlg-tm-rename" style="text-align:left;">✏ 名前変更</button>
            <button type="button" class="btn btn-cancel-m" id="dlg-tm-members" style="text-align:left;">👥 メンバー編集</button>

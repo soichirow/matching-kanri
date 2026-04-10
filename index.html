@@ -550,14 +550,14 @@ body {
   #app { height: auto; min-height: 100vh; }
 
   .app-header {
-    flex-wrap: wrap; height: auto; padding: 8px 10px; gap: 6px;
+    flex-wrap: nowrap; height: auto; padding: 6px 8px; gap: 4px;
   }
-  .app-header h1 { font-size: 15px; width: 100%; }
+  .app-header h1 { display: none; }
   .header-actions {
-    flex-wrap: wrap; gap: 4px; width: 100%;
+    flex-wrap: nowrap; gap: 4px; width: 100%;
   }
   .header-actions .btn { font-size: 11px; padding: 5px 8px; }
-  .header-actions > span { width: 100%; display: flex; gap: 4px; }
+  .header-actions > span { display: none; }
 
   .app-body { flex-direction: column; overflow: visible; }
 
@@ -668,7 +668,7 @@ body {
       <button id="btn-match"         class="btn btn-match">🎲 マッチング生成</button>
       <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;">
         <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
-        余りも配席
+        端数OK
       </label>
       <button id="btn-finish-all"    class="btn btn-finish"   style="display:none">⏹ 全終了</button>
       <button id="btn-regen-match"   class="btn btn-regen"    style="display:none">🔄 再マッチング</button>
@@ -1190,7 +1190,7 @@ const renderPlayers = () => {
     <div class="player-item status-${p.status}${chk ? ' match-checked' : ''}" data-id="${p.id}">
       <input type="checkbox" class="match-chk" data-action="match-check" data-id="${p.id}" ${chk ? 'checked' : ''}
         title="マッチング対象に指定" style="accent-color:var(--accent);cursor:pointer;flex-shrink:0;width:14px;height:14px;">
-      <span class="player-name" data-action="edit-player" data-id="${p.id}" title="ダブルクリックで編集">${esc(p.name)}</span>
+      <span class="player-name" data-action="edit-player" data-id="${p.id}" title="タップで編集">${esc(p.name)}</span>
       ${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}
       ${vpEnabled && vpMap[p.id] != null ? `<span class="score-badge" title="累計点数">${vpMap[p.id]}pt</span>` : ''}
       ${tblBadge}
@@ -1364,6 +1364,15 @@ const finishTable = id => {
 const finishAllTables = () => {
   const playing = getTables().filter(t => t.status === 'playing')
   if (!playing.length) return
+  // スコア未入力チェック
+  if (getSettings().enableVP) {
+    const matches = getMatches()
+    const noScore = playing.filter(t => {
+      const m = [...matches].reverse().find(m => m.tableId === t.id)
+      return m && !m.scores
+    })
+    if (noScore.length && !confirm(`${noScore.length}卓のスコアが未入力です。終了しますか？`)) return
+  }
   saveUndoSnapshot(`全テーブル終了（${playing.length}卓）`)
   playing.forEach(t => {
     t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
@@ -1545,32 +1554,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const doQuickAddPlayers = () => {
     const count = parseInt(document.getElementById('quick-add-count')?.value ?? '0', 10)
     if (!count || count < 1) { toast('人数を入力してください'); return }
-
-    dlgConfirm(
-      `「プレイヤー01」〜 の形式で <strong>${count}人</strong> を追加しますか？`,
-      '追加', 'btn-ok-add'
-    ).then(ok => {
-      if (!ok) return
-      const existing = new Set(getPlayers().map(p => p.name))
-      let maxNum = 0
-      existing.forEach(name => {
-        const m = name.match(/^プレイヤー(\d+)$/)
-        if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
-      })
-
-      let added = 0
-      for (let i = 0; i < count; i++) {
-        const num = maxNum + 1 + i
-        const name = 'プレイヤー' + String(num).padStart(2, '0')
-        if (!existing.has(name)) {
-          addPlayer(name, null)
-          existing.add(name)
-          added++
-        }
-      }
-      render()
-      toast(`${added}人のプレイヤーを追加しました`)
+    const existing = new Set(getPlayers().map(p => p.name))
+    let maxNum = 0
+    existing.forEach(name => {
+      const m = name.match(/^プレイヤー(\d+)$/)
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
     })
+    let added = 0
+    for (let i = 0; i < count; i++) {
+      const num = maxNum + 1 + i
+      const name = 'プレイヤー' + String(num).padStart(2, '0')
+      if (!existing.has(name)) { addPlayer(name, null); existing.add(name); added++ }
+    }
+    render()
+    toast(`${added}人追加しました`)
   }
 
   // プレイヤー編集ダイアログ
@@ -2068,32 +2065,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const doQuickAddTables = () => {
     const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
     if (!count || count < 1) { toast('テーブル数を入力してください'); return }
-
-    dlgConfirm(
-      `「テーブル1」〜 の形式で <strong>${count}卓</strong> を追加しますか？<br><small>サイズは4人（後から変更可）</small>`,
-      '追加', 'btn-ok-add'
-    ).then(ok => {
-      if (!ok) return
-      const existing = new Set(getTables().map(t => t.label))
-      let maxNum = 0
-      existing.forEach(label => {
-        const m = label.match(/^テーブル(\d+)$/)
-        if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
-      })
-      maxNum = Math.max(maxNum, getTables().length)
-      let added = 0
-      for (let i = 0; i < count; i++) {
-        const num = maxNum + 1 + i
-        const label = 'テーブル' + num
-        if (!existing.has(label)) {
-          addTable(label, 4)
-          existing.add(label)
-          added++
-        }
-      }
-      render()
-      toast(`テーブルを${added}卓追加しました`)
+    const existing = new Set(getTables().map(t => t.label))
+    let maxNum = 0
+    existing.forEach(label => {
+      const m = label.match(/^テーブル(\d+)$/)
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
     })
+    maxNum = Math.max(maxNum, getTables().length)
+    let added = 0
+    for (let i = 0; i < count; i++) {
+      const num = maxNum + 1 + i
+      const label = 'テーブル' + num
+      if (!existing.has(label)) { addTable(label, 4); existing.add(label); added++ }
+    }
+    render()
+    toast(`${added}卓追加しました`)
   }
   document.getElementById('btn-quick-add-tables').addEventListener('click', doQuickAddTables)
   const canvas = document.getElementById('canvas')
@@ -2184,18 +2170,14 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
 
-  document.getElementById('player-list').addEventListener('dblclick', e => {
-    const span = e.target.closest('[data-action="edit-player"]')
-    if (!span) return
-    dlgEditPlayer(span.dataset.id)
-  })
-
   document.getElementById('player-list').addEventListener('click', e => {
     const btn = e.target.closest('[data-action]')
     if (!btn) return
     const { action, id } = btn.dataset
 
-    if (action === 'cycle') {
+    if (action === 'edit-player') {
+      dlgEditPlayer(id)
+    } else if (action === 'cycle') {
       cycleStatus(id)
     } else if (action === 'history') {
       dlgPlayerHistory(id)

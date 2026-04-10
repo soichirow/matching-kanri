@@ -41,7 +41,7 @@ export function addPlayer(name, group = null) {
   const player = {
     id: generateId(),
     name,
-    group: group && 'ABCDE'.includes(group) ? group : null,
+    group: group || null,
     status: 'waiting',
   }
   players.push(player)

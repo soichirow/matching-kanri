@@ -37,16 +37,14 @@ describe('addPlayer', () => {
     expect(p.group).toBeNull()
   })
 
-  it('無効なグループ文字はnullになる', () => {
-    const p = addPlayer('山田', 'Z')
-    expect(p.group).toBeNull()
+  it('任意のグループ文字列を保存できる', () => {
+    const p = addPlayer('山田', 'チームX')
+    expect(p.group).toBe('チームX')
   })
 
-  it('小文字グループを大文字に正規化', () => {
-    const p = addPlayer('山田', 'a')
-    // 'a' は 'ABCDE' に含まれないのでnull（大文字変換は呼び出し側の責任）
-    // store.js は受け取った値をそのまま ABCDE チェックする
-    expect(['A', null]).toContain(p.group)
+  it('空文字のグループはnullになる', () => {
+    const p = addPlayer('山田', '')
+    expect(p.group).toBeNull()
   })
 })
 

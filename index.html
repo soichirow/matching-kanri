@@ -697,8 +697,8 @@ body {
     </div>
 
     <div id="paste-hint-player" class="paste-hint">
-      ExcelのA列に<code>名前</code>、B列に<code>グループ(A〜E)</code>を入れてコピー → 下に貼り付け<br>
-      グループ列は省略可。既存と同名プレイヤーはスキップします。
+      A列に<code>名前</code>、B列に<code>グループ</code>を入れてコピー → 下に貼り付け<br>
+      CSV(カンマ区切り)にも対応。グループは任意の文字列（省略可）。同名はスキップ。
     </div>
     <div id="paste-hint-table" class="paste-hint" style="display:none">
       ExcelのA列に<code>テーブル名</code>、B列に<code>サイズ(2/3/4)</code>を入れてコピー → 下に貼り付け<br>
@@ -737,7 +737,7 @@ const addPlayer = (name, group = null) => {
   const players = getPlayers()
   const p = {
     id: generateId(), name,
-    group: (group && 'ABCDE'.includes(group)) ? group : null,
+    group: group || null,
     status: 'waiting'
   }
   players.push(p)
@@ -1548,9 +1548,12 @@ document.addEventListener('DOMContentLoaded', () => {
      </div>
      <div class="dlg-field">
        <label>グループ（任意）</label>
-       <div class="dlg-pills" id="dlg-group-pills">
-         <button type="button" class="dlg-pill active" data-val="">なし</button>
-         ${['A','B','C','D','E'].map(g => `<button type="button" class="dlg-pill" data-val="${g}">${g}</button>`).join('')}
+       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+         <div class="dlg-pills" id="dlg-group-pills">
+           <button type="button" class="dlg-pill active" data-val="">なし</button>
+           ${['A','B','C','D','E'].map(g => `<button type="button" class="dlg-pill" data-val="${g}">${g}</button>`).join('')}
+         </div>
+         <input type="text" id="dlg-group-custom" placeholder="またはグループ名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
        </div>
      </div>`,
     `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
@@ -1565,7 +1568,8 @@ document.addEventListener('DOMContentLoaded', () => {
       existing.forEach(n => { const m = n.match(/^プレイヤー(\d+)$/); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)) })
       name = 'プレイヤー' + String(maxNum + 1).padStart(2, '0')
     }
-    const group = document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
+    const customGroup = document.getElementById('dlg-group-custom')?.value.trim()
+    const group = customGroup || document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
     addPlayer(name, group || null)
     render()
   })
@@ -1607,9 +1611,12 @@ document.addEventListener('DOMContentLoaded', () => {
        </div>
        <div class="dlg-field">
          <label>グループ（任意）</label>
-         <div class="dlg-pills" id="dlg-group-pills-edit">
-           <button type="button" class="dlg-pill${!p.group ? ' active' : ''}" data-val="">なし</button>
-           ${pills}
+         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+           <div class="dlg-pills" id="dlg-group-pills-edit">
+             <button type="button" class="dlg-pill${!p.group || 'ABCDE'.includes(p.group) ? (!p.group ? ' active' : '') : ''}" data-val="">なし</button>
+             ${pills}
+           </div>
+           <input type="text" id="dlg-group-custom-edit" placeholder="またはグループ名" value="${p.group && !'ABCDE'.includes(p.group) ? esc(p.group) : ''}" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
        </div>`,
       `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
@@ -1618,7 +1625,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!ok) return
       const name = document.getElementById('dlg-pname-edit')?.value.trim()
       if (!name) { toast('名前を入力してください'); return }
-      const group = document.querySelector('#dlg-group-pills-edit .dlg-pill.active')?.dataset.val || null
+      const customGroup = document.getElementById('dlg-group-custom-edit')?.value.trim()
+      const group = customGroup || document.querySelector('#dlg-group-pills-edit .dlg-pill.active')?.dataset.val || null
       updatePlayer(id, { name, group: group || null })
       render()
     })
@@ -2057,10 +2065,10 @@ document.addEventListener('DOMContentLoaded', () => {
         テーブル人数は2〜8人に対応。ラウンド数はステータスバーに自動表示されます。
       </p>
 
-      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🏷 グループ (A〜E)</h3>
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🏷 グループ</h3>
       <p style="margin:0 0 10px;">
-        同グループ同士は同卓になりにくくなります。<br>
-        例：チーム分け、レベル帯、友人グループなど
+        同グループ同士は同卓になりにくくなります。A〜Eの他、任意のグループ名も使えます。<br>
+        例：チーム名、レベル帯、友人グループなど
       </p>
 
       <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">☑ 選択モード</h3>
@@ -2289,7 +2297,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const parseExcelText = text => {
     return text
       .split(/\r?\n/)
-      .map(line => line.split('\t').map(c => c.trim()))
+      .map(line => {
+        // タブ区切り優先、なければカンマ区切り
+        const cols = line.includes('\t') ? line.split('\t') : line.split(',')
+        return cols.map(c => c.trim())
+      })
       .filter(cols => cols[0])
   }
 
@@ -2315,7 +2327,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const existing = new Set(getPlayers().map(p => p.name))
       const items = rows.map(cols => {
         const name  = cols[0]
-        const group = (cols[1] && 'ABCDE'.includes(cols[1].toUpperCase())) ? cols[1].toUpperCase() : null
+        const group = cols[1] ? cols[1].trim() : null
         const dup   = existing.has(name)
         return { name, group, dup }
       })
@@ -2363,7 +2375,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rows.forEach(cols => {
         const name  = cols[0]
         if (existing.has(name)) return
-        const group = (cols[1] && 'ABCDE'.includes(cols[1].toUpperCase())) ? cols[1].toUpperCase() : null
+        const group = cols[1] ? cols[1].trim() : null
         addPlayer(name, group)
       })
     } else {

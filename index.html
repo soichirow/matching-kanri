@@ -643,19 +643,7 @@ body {
 
   <div class="app-body">
     <aside class="player-panel" id="player-panel">
-      <div class="panel-toolbar">
-        <span id="player-stats" class="player-stats"></span>
-        <button class="panel-tool-btn" id="btn-open-paste" title="Excelから一括入力">📋</button>
-      </div>
       <div class="panel-quick-add">
-        <select id="quick-add-count" class="quick-select">
-          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-          <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
-          <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
-        </select>
-        <button class="panel-add-btn" id="btn-quick-add">＋人</button>
-        <span class="panel-sep"></span>
         <select id="quick-add-table-count" class="quick-select">
           <option value="1">1</option><option value="2">2</option><option value="3">3</option>
           <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
@@ -663,6 +651,18 @@ body {
           <option value="16">16</option><option value="20">20</option>
         </select>
         <button class="panel-add-btn" id="btn-quick-add-tables">＋卓</button>
+        <span class="panel-sep"></span>
+        <select id="quick-add-count" class="quick-select">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
+          <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
+        </select>
+        <button class="panel-add-btn" id="btn-quick-add">＋人</button>
+        <button class="panel-tool-btn" id="btn-open-paste" title="Excelから一括入力">📋</button>
+      </div>
+      <div class="panel-toolbar">
+        <span id="player-stats" class="player-stats"></span>
       </div>
       <div id="player-list"></div>
     </aside>

@@ -194,17 +194,14 @@ body {
   white-space: nowrap; flex-shrink: 0;
 }
 
-.score-row {
-  display: flex; align-items: center; gap: 2px; margin-top: 2px;
-}
 .score-input {
-  width: 64px; font-size: 16px; padding: 6px 8px;
-  border: 1px solid var(--border); border-radius: 6px;
+  width: 52px; font-size: 14px; padding: 4px 6px;
+  border: 1px solid var(--border); border-radius: 5px;
   background: var(--bg); color: var(--text);
   text-align: center; font-weight: 600;
 }
 .score-input:focus { border-color: var(--warning); outline: none; }
-.score-unit { font-size: 12px; color: var(--text-dim); }
+.score-unit { font-size: 11px; color: var(--text-dim); }
 
 .status-btn {
   font-size: 11px; padding: 4px 10px; border-radius: 10px;
@@ -1306,13 +1303,10 @@ const refreshTableCard = (el, t) => {
     : seated.length
       ? seated.map(p => {
           const vpInput = (vpEnabled && t.status === 'playing' && currentMatch)
-            ? `<div class="score-row no-drag">
-                <input type="number" class="score-input" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
-                  value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±" inputmode="numeric">
-                <span class="score-unit">pt</span>
-               </div>`
+            ? `<input type="number" class="score-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
+                value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±" inputmode="numeric">`
             : ''
-          return `<div class="table-player">${esc(p.name)}${vpInput}</div>`
+          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
         }).join('')
       : '<div class="table-empty">空席</div>'
 
@@ -1570,6 +1564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = parseInt(document.getElementById('quick-add-count')?.value ?? '0', 10)
     if (!count || count < 1) return
     if (count === 1) { dlgAddPlayer(); return }
+    if (!confirm(`プレイヤーを${count}人追加しますか？`)) return
     const existing = new Set(getPlayers().map(p => p.name))
     let maxNum = 0
     existing.forEach(name => {
@@ -2080,6 +2075,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
     if (!count || count < 1) return
     if (count === 1) { dlgAddTable(); return }
+    if (!confirm(`テーブルを${count}卓追加しますか？`)) return
     const existing = new Set(getTables().map(t => t.label))
     let maxNum = 0
     existing.forEach(label => {

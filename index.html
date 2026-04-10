@@ -615,8 +615,13 @@ body {
       <button id="btn-add-player"    class="btn btn-primary">＋ プレイヤー</button>
       <button id="btn-add-table"     class="btn btn-primary">＋ テーブル</button>
       <span style="display:inline-flex;align-items:center;gap:3px;margin-left:-4px;">
-        <input type="number" id="quick-add-table-count" min="1" max="30" value="4" title="テーブル数"
-          style="width:40px;font-size:12px;padding:4px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+        <select id="quick-add-table-count" title="テーブル数"
+          style="width:48px;font-size:12px;padding:4px 2px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+          <option value="8">8</option><option value="10">10</option><option value="12">12</option>
+          <option value="16">16</option><option value="20">20</option>
+        </select>
         <button id="btn-quick-add-tables" class="btn btn-primary" style="padding:6px 8px;font-size:12px;" title="テーブルを一括追加">＋ 一括</button>
       </span>
       <span style="flex:1;"></span>
@@ -634,8 +639,13 @@ body {
         <button class="paste-panel-btn" id="btn-open-paste" style="flex:1;">📋 Excelから一括入力</button>
       </div>
       <div style="padding:2px 8px 2px; display:flex; gap:4px; align-items:center;">
-        <input type="number" id="quick-add-count" min="1" max="99" value="10" placeholder="人数"
-          style="width:52px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+        <select id="quick-add-count"
+          style="width:56px;font-size:12px;padding:4px 2px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
+          <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
+        </select>
         <button class="paste-panel-btn" id="btn-quick-add" style="flex:1;">＋ 人数で追加</button>
       </div>
       <div id="player-list"></div>
@@ -648,6 +658,7 @@ body {
 
   <footer class="matching-bar">
     <div class="matching-bar-inner">
+      <button id="btn-undo"          class="btn btn-monitor" title="元に戻す">↩</button>
       <button id="btn-match"         class="btn btn-match">🎲 マッチング生成</button>
       <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;">
         <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
@@ -1961,9 +1972,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-add-player').addEventListener('click', dlgAddPlayer)
   document.getElementById('btn-quick-add').addEventListener('click', doQuickAddPlayers)
-  document.getElementById('quick-add-count').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doQuickAddPlayers()
-  })
   document.getElementById('btn-add-table').addEventListener('click', dlgAddTable)
 
   const doQuickAddTables = () => {
@@ -1997,10 +2005,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
   document.getElementById('btn-quick-add-tables').addEventListener('click', doQuickAddTables)
-  document.getElementById('quick-add-table-count').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doQuickAddTables()
-  })
-
   const canvas = document.getElementById('canvas')
   canvas.addEventListener('click', e => {
     const btn = e.target.closest('[data-action]')
@@ -2286,6 +2290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // ── その他ボタン ──────────────────────────────────────────
+  document.getElementById('btn-undo').addEventListener('click', undo)
   document.getElementById('btn-match').addEventListener('click', () => doGenerateMatching(false))
   document.getElementById('btn-regen-match').addEventListener('click', () => doGenerateMatching(true))
   document.getElementById('btn-confirm-match').addEventListener('click', doConfirmMatching)

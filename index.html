@@ -1127,7 +1127,7 @@ const renderPlayerStats = () => {
   const ps = getPlayers()
   const c  = s => ps.filter(p => p.status === s).length
   const excluded = ps.filter(p => ['excluded','break','left'].includes(p.status)).length
-  const round = countRounds()
+  const round = getSettings().showRound ? countRounds() : 0
   el.innerHTML = `${round ? `<span style="color:var(--accent)">R${round}</span> ` : ''}<span style="color:var(--accent2)">待機${c('waiting')}</span> <span style="color:var(--success)">対戦${c('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
 }
 
@@ -1804,6 +1804,12 @@ document.addEventListener('DOMContentLoaded', () => {
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
          <label style="cursor:pointer;">
+           <input type="checkbox" id="dlg-show-round" ${s.showRound ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
+           ラウンド数を表示する
+         </label>
+       </div>
+       <div class="dlg-field">
+         <label style="cursor:pointer;">
            <input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
            点数を記録する
          </label>
@@ -1853,10 +1859,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ).then(ok => {
       if (!ok) return
       const v = parseInt(document.getElementById('dlg-min-fill')?.value ?? '0', 10)
+      const showRound = !!document.getElementById('dlg-show-round')?.checked
       const enableVP = !!document.getElementById('dlg-enable-vp')?.checked
       const vpMatching = enableVP && !!document.getElementById('dlg-vp-matching')?.checked
       const theme = document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark'
-      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), enableVP, vpMatching, theme })
+      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableVP, vpMatching, theme })
       applyTheme(theme)
       render()
       toast('設定を保存しました')

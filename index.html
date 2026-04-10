@@ -170,7 +170,7 @@ body {
   flex-shrink: 0;
 }
 
-.vp-badge {
+.score-badge {
   font-size: 10px; font-weight: 700; padding: 1px 5px;
   border-radius: 4px; background: rgba(249,168,37,.15); color: var(--warning);
   white-space: nowrap; flex-shrink: 0;
@@ -609,16 +609,6 @@ body {
     <div class="header-actions">
       <button id="btn-add-player"    class="btn btn-primary">＋ プレイヤー</button>
       <button id="btn-add-table"     class="btn btn-primary">＋ テーブル</button>
-      <span style="display:inline-flex;align-items:center;gap:3px;margin-left:-4px;">
-        <select id="quick-add-table-count" title="テーブル数"
-          style="width:48px;font-size:12px;padding:4px 2px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
-          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-          <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
-          <option value="8">8</option><option value="10">10</option><option value="12">12</option>
-          <option value="16">16</option><option value="20">20</option>
-        </select>
-        <button id="btn-quick-add-tables" class="btn btn-primary" style="padding:6px 8px;font-size:12px;" title="テーブルを一括追加">＋一括追加</button>
-      </span>
       <span style="flex:1;"></span>
       <button id="btn-theme"         class="btn btn-monitor" title="テーマ切替" style="padding:6px 10px;">🌙</button>
       <button id="btn-help"          class="btn btn-monitor" style="padding:6px 10px;">❓</button>
@@ -641,7 +631,17 @@ body {
           <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
           <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
         </select>
-        <button class="paste-panel-btn" id="btn-quick-add" style="flex:1;">＋ まとめて追加</button>
+        <button class="paste-panel-btn" id="btn-quick-add" style="flex:1;">＋ プレイヤー追加</button>
+      </div>
+      <div style="padding:2px 8px 4px; display:flex; gap:4px; align-items:center;">
+        <select id="quick-add-table-count"
+          style="width:56px;font-size:12px;padding:4px 2px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+          <option value="8">8</option><option value="10">10</option><option value="12">12</option>
+          <option value="16">16</option><option value="20">20</option>
+        </select>
+        <button class="paste-panel-btn" id="btn-quick-add-tables" style="flex:1;">＋ テーブル追加</button>
       </div>
       <div id="player-list"></div>
     </aside>
@@ -1180,7 +1180,7 @@ const renderPlayers = () => {
         title="マッチング対象に指定" style="accent-color:var(--accent);cursor:pointer;flex-shrink:0;width:14px;height:14px;">
       <span class="player-name" data-action="edit-player" data-id="${p.id}" title="ダブルクリックで編集">${esc(p.name)}</span>
       ${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}
-      ${vpEnabled && vpMap[p.id] != null ? `<span class="vp-badge" title="累計VP">${vpMap[p.id]}VP</span>` : ''}
+      ${vpEnabled && vpMap[p.id] != null ? `<span class="score-badge" title="累計点数">${vpMap[p.id]}pt</span>` : ''}
       ${tblBadge}
       <button class="delete-btn" data-action="history" data-id="${p.id}" title="対戦履歴">📋</button>
       <button class="status-btn s-${p.status}" ${p.status !== 'playing' ? `data-action="cycle" data-id="${p.id}"` : 'disabled title="テーブルから外すと自動で待機に戻ります"'}>${statusLabel(p.status)}</button>
@@ -1284,7 +1284,7 @@ const refreshTableCard = (el, t) => {
       ? seated.map(p => {
           const vpInput = (vpEnabled && t.status === 'playing' && currentMatch)
             ? `<input type="number" class="vp-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
-                value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="VP" style="width:52px;font-size:12px;padding:1px 4px;margin-left:auto;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);">`
+                value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±点" style="width:52px;font-size:12px;padding:1px 4px;margin-left:auto;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);">`
             : ''
           return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${vpInput}</div>`
         }).join('')
@@ -1617,7 +1617,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return op ? esc(op.name) : '?'
       }).join(', ')
       const vp = m.scores?.[id]
-      const vpStr = vp != null ? `<span class="vp-badge">${vp}VP</span>` : ''
+      const vpStr = vp != null ? `<span class="score-badge">${vp}pt</span>` : ''
       return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
         <span style="font-size:11px;color:var(--text-dim);width:50px;flex-shrink:0;">${esc(tbl?.label ?? '?')}</span>
         <span style="flex:1;font-size:12px;">${opponents}</span>
@@ -1629,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `${esc(p.name)} の対戦履歴`,
       `<div class="dlg-field">
          <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
-           対戦回数：${matches.length}回 ／ 対戦相手：${Object.keys(countMap).length}人${vpEnabled ? ` ／ 累計VP：${totalVP}` : ''}
+           対戦回数：${matches.length}回 ／ 対戦相手：${Object.keys(countMap).length}人${vpEnabled ? ` ／ 累計：${totalVP}pt` : ''}
          </p>
          ${vpEnabled && matchRows ? `
          <p style="font-size:12px;font-weight:600;margin:8px 0 4px;color:var(--warning);">対戦ごとのスコア</p>
@@ -1772,17 +1772,17 @@ document.addEventListener('DOMContentLoaded', () => {
        <div class="dlg-field">
          <label style="cursor:pointer;">
            <input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
-           勝利点（VP）を記録する
+           点数を記録する
          </label>
          <p style="font-size:12px;color:var(--text-dim);margin:4px 0 6px 22px;">
-           ONにすると対戦中のテーブルにスコア入力欄が表示されます。
+           ONにすると対戦中のテーブルに点数入力欄が表示されます（プラス・マイナス対応）。
          </p>
          <label style="cursor:pointer;margin-left:22px;">
            <input type="checkbox" id="dlg-vp-matching" ${s.vpMatching ? 'checked' : ''} ${!s.enableVP ? 'disabled' : ''} style="accent-color:var(--accent);margin-right:6px;">
-           マッチングにVPを加味する
+           マッチングに点数を反映する
          </label>
          <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 44px;">
-           累計VPが近いプレイヤー同士を同卓にしやすくします。
+           累計点数が近いプレイヤー同士を同卓にしやすくします。
          </p>
        </div>
        <hr style="border-color:var(--border);margin:12px 0;">
@@ -1948,10 +1948,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <strong>テーブルの選択</strong>：選択したテーブルだけに割り当てます（未選択時は全空きテーブルが対象）
       </p>
 
-      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⚡ 勝利点 (VP)</h3>
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⚡ 点数の記録</h3>
       <p style="margin:0 0 10px;">
-        設定で「勝利点を記録する」をONにすると、対戦中のテーブルカードにスコア入力欄が表示されます。<br>
-        「マッチングにVPを加味する」をONにすると、累計VPが近いプレイヤー同士が同卓になりやすくなります。
+        設定で「点数を記録する」をONにすると、対戦中のテーブルに点数入力欄が表示されます（±対応）。<br>
+        「マッチングに点数を反映する」をONにすると、累計点数が近いプレイヤー同士が同卓になりやすくなります。
       </p>
 
       <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⌨ ショートカット</h3>

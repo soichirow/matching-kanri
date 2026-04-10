@@ -112,7 +112,7 @@ body {
   flex-shrink: 0;
 }
 .panel-toolbar .player-stats {
-  flex: 1; font-size: 11px; color: var(--text-dim);
+  flex: 1; font-size: 13px; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .panel-tool-btn {
@@ -227,8 +227,11 @@ body {
   color: var(--text-dim); cursor: pointer; border-radius: 4px;
   font-size: 14px; line-height: 1; display: flex;
   align-items: center; justify-content: center; flex-shrink: 0;
+  opacity: 0; transition: opacity 0.15s;
 }
+.player-item:hover .delete-btn { opacity: 1; }
 .delete-btn:hover { background: var(--danger); color: white; }
+@media (max-width: 768px) { .delete-btn { opacity: 0.5; } }
 
 /* キャンバス */
 .canvas-wrap { flex: 1; overflow: auto; position: relative; }
@@ -293,11 +296,11 @@ body {
 }
 
 .btn-finish {
-  font-size: 12px; padding: 6px 12px; min-height: 34px;
-  border: 1px solid var(--danger); background: transparent;
-  color: var(--danger); border-radius: 5px; cursor: pointer;
+  font-size: 13px; padding: 7px 14px; min-height: 36px; font-weight: 700;
+  border: none; background: var(--danger); color: white;
+  border-radius: 6px; cursor: pointer;
 }
-.btn-finish:hover { background: var(--danger); color: white; }
+.btn-finish:hover { filter: brightness(1.15); }
 
 .btn-disband {
   font-size: 12px; padding: 6px 12px; min-height: 34px;
@@ -342,9 +345,9 @@ body {
 .btn-primary  { background: var(--accent);  color: white; }
 .btn-danger   { background: var(--danger);  color: white; }
 .btn-monitor  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-match    { background: var(--accent);  color: white; }
+.btn-match    { background: var(--accent);  color: white; font-size: 15px; padding: 10px 22px; font-weight: 700; border-radius: 10px; }
 .btn-regen    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-confirm  { background: var(--success); color: #111; }
+.btn-confirm  { background: var(--success); color: #111; font-size: 15px; padding: 10px 22px; font-weight: 700; border-radius: 10px; }
 .btn-sm       { padding: 3px 10px; font-size: 12px; }
 .btn-cancel-m { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-ok-add   { background: var(--accent); color: white; }
@@ -618,8 +621,8 @@ body {
   <header class="app-header">
     <h1>マッチング管理</h1>
     <div class="header-actions">
-      <button id="btn-add-player"    class="btn btn-primary">＋ プレイヤー</button>
-      <button id="btn-add-table"     class="btn btn-primary">＋ テーブル</button>
+      <button id="btn-add-player"    class="btn btn-monitor">＋ プレイヤー</button>
+      <button id="btn-add-table"     class="btn btn-monitor">＋ テーブル</button>
       <span style="flex:1;"></span>
       <button id="btn-theme"         class="btn btn-monitor" title="テーマ切替" style="padding:6px 10px;">🌙</button>
       <button id="btn-help"          class="btn btn-monitor" style="padding:6px 10px;">❓</button>
@@ -1123,7 +1126,7 @@ const renderPlayerStats = () => {
   const ps = getPlayers()
   const c  = s => ps.filter(p => p.status === s).length
   const excluded = ps.filter(p => ['excluded','break','left'].includes(p.status)).length
-  el.textContent = `待機 ${c('waiting')} / 対戦中 ${c('playing')} / 除外 ${excluded}`
+  el.innerHTML = `<span style="color:var(--accent2)">待機${c('waiting')}</span> <span style="color:var(--success)">対戦${c('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
 }
 
 const STATUS_ORDER = { playing: 0, waiting: 1, excluded: 2, break: 2, left: 2 }

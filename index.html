@@ -1422,7 +1422,8 @@ const doGenerateMatching = (shuffle = false) => {
   const assignLeftover = !!document.getElementById('chk-assign-leftover')?.checked
   const minFill = assignLeftover ? 1 : (settings.minFill ?? 0)
   const vpMap = (settings.enableVP && settings.vpMatching) ? buildVpMap(matches) : null
-  pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shuffle, minFill, vpMap)
+  const shouldShuffle = shuffle || matches.length === 0  // 初回は常にシャッフル
+  pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap)
   if (!pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
   // 複数テーブル時、席移動を最小化するテーブル割り当てを選択
   if (pendingMatches.length > 1) {

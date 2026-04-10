@@ -1495,8 +1495,14 @@ document.addEventListener('DOMContentLoaded', () => {
      <button class="btn btn-ok-add"  id="dlg-ok">追加</button>`
   ).then(ok => {
     if (!ok) return
-    const name  = document.getElementById('dlg-pname')?.value.trim()
-    if (!name) { toast('名前を入力してください'); return }
+    let name = document.getElementById('dlg-pname')?.value.trim()
+    if (!name) {
+      // 空なら「プレイヤーXX」形式で自動命名
+      const existing = new Set(getPlayers().map(p => p.name))
+      let maxNum = 0
+      existing.forEach(n => { const m = n.match(/^プレイヤー(\d+)$/); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)) })
+      name = 'プレイヤー' + String(maxNum + 1).padStart(2, '0')
+    }
     const group = document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
     addPlayer(name, group || null)
     render()

@@ -997,6 +997,8 @@ const optimizeTableAssignment = (assignments, matches) => {
 // layout — ドラッグ&ドロップ
 // ════════════════════════════════════════════════════════
 
+const isMobile = () => window.innerWidth <= 768
+
 const enableDrag = (el, onMove) => {
   let startMX, startMY, startL, startT, dragging = false
 
@@ -1029,6 +1031,7 @@ const enableDrag = (el, onMove) => {
     document.addEventListener('mouseup', onMU)
   })
   el.addEventListener('touchstart', e => {
+    if (isMobile()) return  // スマホではドラッグ無効、通常スクロールを許可
     if (e.target.closest('.no-drag')) return
     e.preventDefault()
     startDrag(e.touches[0].clientX, e.touches[0].clientY)

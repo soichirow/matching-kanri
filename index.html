@@ -1990,27 +1990,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const allMatches = getMatches()
     const scoreMap = buildVpMap(allMatches)
 
-    // 各プレイヤーの対戦数・対戦相手数を集計
-    const statsMap = {}
-    allPlayers.forEach(p => { statsMap[p.id] = { matches: 0, opponents: new Set() } })
-    allMatches.forEach(m => {
-      m.playerIds.forEach(pid => {
-        if (!statsMap[pid]) return
-        statsMap[pid].matches++
-        m.playerIds.forEach(oid => { if (oid !== pid) statsMap[pid].opponents.add(oid) })
-      })
-    })
-
     const rows = allPlayers
-      .filter(p => !['excluded','break','left'].includes(p.status) || statsMap[p.id]?.matches > 0)
+      .filter(p => !['excluded','break','left'].includes(p.status))
       .map(p => ({
         name: p.name,
         group: p.group,
         score: scoreMap[p.id] ?? 0,
-        matches: statsMap[p.id]?.matches ?? 0,
-        opponents: statsMap[p.id]?.opponents.size ?? 0,
       }))
-      .sort((a, b) => b.score - a.score || b.matches - a.matches)
+      .sort((a, b) => b.score - a.score)
 
     const hasScores = Object.keys(scoreMap).length > 0
     const tableHtml = rows.length ? rows.map((r, i) => `
@@ -2018,16 +2005,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <td style="text-align:center;color:var(--text-dim);width:28px;">${i + 1}</td>
         <td>${esc(r.name)}${r.group ? ` <span class="group-badge">${esc(r.group)}</span>` : ''}</td>
         ${hasScores ? `<td style="text-align:right;font-weight:700;color:var(--warning);">${r.score}pt</td>` : ''}
-        <td style="text-align:center;color:var(--text-dim);">${r.matches}</td>
-        <td style="text-align:center;color:var(--text-dim);">${r.opponents}</td>
       </tr>
-    `).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">データがありません</td></tr>'
+    `).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--text-dim);">データがありません</td></tr>'
 
     // TSVデータ生成
-    const tsvHeader = hasScores ? '順位\t名前\tグループ\t点数\t対戦数\t対戦相手数' : '順位\t名前\tグループ\t対戦数\t対戦相手数'
+    const tsvHeader = hasScores ? '順位\t名前\tグループ\t点数' : '順位\t名前\tグループ'
     const tsvRows = rows.map((r, i) => hasScores
-      ? `${i+1}\t${r.name}\t${r.group ?? ''}\t${r.score}\t${r.matches}\t${r.opponents}`
-      : `${i+1}\t${r.name}\t${r.group ?? ''}\t${r.matches}\t${r.opponents}`
+      ? `${i+1}\t${r.name}\t${r.group ?? ''}\t${r.score}`
+      : `${i+1}\t${r.name}\t${r.group ?? ''}`
     ).join('\n')
     const tsvData = tsvHeader + '\n' + tsvRows
 
@@ -2039,8 +2024,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <th style="padding:4px;">#</th>
             <th style="text-align:left;padding:4px;">名前</th>
             ${hasScores ? '<th style="text-align:right;padding:4px;">点数</th>' : ''}
-            <th style="padding:4px;">対戦</th>
-            <th style="padding:4px;">相手</th>
           </tr></thead>
           <tbody style="line-height:1.8;">${tableHtml}</tbody>
         </table>

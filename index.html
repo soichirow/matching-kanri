@@ -624,6 +624,7 @@ body {
       <button id="btn-add-player"    class="btn btn-monitor">＋ プレイヤー</button>
       <button id="btn-add-table"     class="btn btn-monitor">＋ テーブル</button>
       <span style="flex:1;"></span>
+      <button id="btn-standings"     class="btn btn-monitor" title="順位表" style="padding:6px 10px;">🏆</button>
       <button id="btn-theme"         class="btn btn-monitor" title="テーマ切替" style="padding:6px 10px;">🌙</button>
       <button id="btn-help"          class="btn btn-monitor" style="padding:6px 10px;">❓</button>
       <button id="btn-settings"      class="btn btn-monitor" style="padding:6px 10px;">⚙</button>
@@ -669,6 +670,7 @@ body {
         <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
         余りも配席
       </label>
+      <button id="btn-finish-all"    class="btn btn-finish"   style="display:none">⏹ 全終了</button>
       <button id="btn-regen-match"   class="btn btn-regen"    style="display:none">🔄 再マッチング</button>
       <button id="btn-confirm-match" class="btn btn-confirm"  style="display:none">✅ 全確定</button>
       <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none">✕ キャンセル</button>
@@ -1329,12 +1331,15 @@ const renderMatchingBar = () => {
   if (!preview) return
 
   const hasPending = pendingMatches.length > 0
+  const hasPlaying = getTables().some(t => t.status === 'playing')
   preview.innerHTML = hasPending
     ? `<span class="pending-badge" style="font-size:13px;">仮マッチング中 ${pendingMatches.length}卓</span>`
     : ''
   if (confirmBtn) confirmBtn.style.display = hasPending ? '' : 'none'
   if (cancelBtn)  cancelBtn.style.display  = hasPending ? '' : 'none'
   if (regenBtn)   regenBtn.style.display   = hasPending ? '' : 'none'
+  const finishAllBtn = document.getElementById('btn-finish-all')
+  if (finishAllBtn) finishAllBtn.style.display = (!hasPending && hasPlaying) ? '' : 'none'
 }
 
 // ── アクション ────────────────────────────────────────────
@@ -1354,6 +1359,18 @@ const finishTable = id => {
   t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
   updateTable(id, { status: 'empty', playerIds: [] })
   render()
+}
+
+const finishAllTables = () => {
+  const playing = getTables().filter(t => t.status === 'playing')
+  if (!playing.length) return
+  saveUndoSnapshot(`全テーブル終了（${playing.length}卓）`)
+  playing.forEach(t => {
+    t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
+    updateTable(t.id, { status: 'empty', playerIds: [] })
+  })
+  render()
+  toast(`${playing.length}卓を終了しました`)
 }
 
 const disbandTable = id => {
@@ -1933,6 +1950,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-settings').addEventListener('click', dlgSettings)
 
+  // ── 順位表 ────────────────────────────────────────────
+  document.getElementById('btn-standings').addEventListener('click', () => {
+    const allPlayers = getPlayers()
+    const allMatches = getMatches()
+    const scoreMap = buildVpMap(allMatches)
+
+    // 各プレイヤーの対戦数・対戦相手数を集計
+    const statsMap = {}
+    allPlayers.forEach(p => { statsMap[p.id] = { matches: 0, opponents: new Set() } })
+    allMatches.forEach(m => {
+      m.playerIds.forEach(pid => {
+        if (!statsMap[pid]) return
+        statsMap[pid].matches++
+        m.playerIds.forEach(oid => { if (oid !== pid) statsMap[pid].opponents.add(oid) })
+      })
+    })
+
+    const rows = allPlayers
+      .filter(p => !['excluded','break','left'].includes(p.status) || statsMap[p.id]?.matches > 0)
+      .map(p => ({
+        name: p.name,
+        group: p.group,
+        score: scoreMap[p.id] ?? 0,
+        matches: statsMap[p.id]?.matches ?? 0,
+        opponents: statsMap[p.id]?.opponents.size ?? 0,
+      }))
+      .sort((a, b) => b.score - a.score || b.matches - a.matches)
+
+    const hasScores = Object.keys(scoreMap).length > 0
+    const tableHtml = rows.length ? rows.map((r, i) => `
+      <tr>
+        <td style="text-align:center;color:var(--text-dim);width:28px;">${i + 1}</td>
+        <td>${esc(r.name)}${r.group ? ` <span class="group-badge">${esc(r.group)}</span>` : ''}</td>
+        ${hasScores ? `<td style="text-align:right;font-weight:700;color:var(--warning);">${r.score}pt</td>` : ''}
+        <td style="text-align:center;color:var(--text-dim);">${r.matches}</td>
+        <td style="text-align:center;color:var(--text-dim);">${r.opponents}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">データがありません</td></tr>'
+
+    // TSVデータ生成
+    const tsvHeader = hasScores ? '順位\t名前\tグループ\t点数\t対戦数\t対戦相手数' : '順位\t名前\tグループ\t対戦数\t対戦相手数'
+    const tsvRows = rows.map((r, i) => hasScores
+      ? `${i+1}\t${r.name}\t${r.group ?? ''}\t${r.score}\t${r.matches}\t${r.opponents}`
+      : `${i+1}\t${r.name}\t${r.group ?? ''}\t${r.matches}\t${r.opponents}`
+    ).join('\n')
+    const tsvData = tsvHeader + '\n' + tsvRows
+
+    _openDlg(
+      `🏆 順位表（${rows.length}人）`,
+      `<div style="max-height:350px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="border-bottom:2px solid var(--border);font-size:11px;color:var(--text-dim);">
+            <th style="padding:4px;">#</th>
+            <th style="text-align:left;padding:4px;">名前</th>
+            ${hasScores ? '<th style="text-align:right;padding:4px;">点数</th>' : ''}
+            <th style="padding:4px;">対戦</th>
+            <th style="padding:4px;">相手</th>
+          </tr></thead>
+          <tbody style="line-height:1.8;">${tableHtml}</tbody>
+        </table>
+      </div>`,
+      `<button class="btn btn-cancel-m" id="dlg-copy-standings" style="margin-right:auto;">📋 コピー</button>
+       <button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
+    )
+    // コピーボタンのイベント
+    setTimeout(() => {
+      document.getElementById('dlg-copy-standings')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(tsvData).then(() => toast('順位表をコピーしました（Excel貼り付け可）'))
+      })
+    }, 50)
+  })
+
   document.getElementById('btn-help').addEventListener('click', () => _openDlg(
     'ヘルプ — 使い方ガイド',
     `<div style="max-height:380px;overflow-y:auto;font-size:13px;line-height:1.7;">
@@ -2293,6 +2382,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── その他ボタン ──────────────────────────────────────────
   document.getElementById('btn-undo').addEventListener('click', undo)
+  document.getElementById('btn-finish-all').addEventListener('click', finishAllTables)
   document.getElementById('btn-match').addEventListener('click', () => doGenerateMatching(false))
   document.getElementById('btn-regen-match').addEventListener('click', () => doGenerateMatching(true))
   document.getElementById('btn-confirm-match').addEventListener('click', doConfirmMatching)

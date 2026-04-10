@@ -2097,27 +2097,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (action === 'table-menu') {
       const tbl = getTables().find(x => x.id === id)
       if (!tbl) return
-      const sizeOptions = [2, 3, 4]
-      const nextSize = sizeOptions[(sizeOptions.indexOf(tbl.size) + 1) % sizeOptions.length]
       _openDlg(
         `${esc(tbl.label)} — テーブル操作`,
         `<div style="display:flex;flex-direction:column;gap:8px;">
+           <div style="display:flex;align-items:center;gap:8px;">
+             <span style="font-size:13px;">👥 人数</span>
+             <select id="dlg-tm-size-sel" style="font-size:14px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+               ${[2,3,4].map(n => `<option value="${n}"${n===tbl.size?' selected':''}>${n}人</option>`).join('')}
+             </select>
+           </div>
            <button type="button" class="btn btn-cancel-m" id="dlg-tm-rename" style="text-align:left;">✏ 名前変更</button>
            <button type="button" class="btn btn-cancel-m" id="dlg-tm-members" style="text-align:left;">👥 メンバー編集</button>
-           <button type="button" class="btn btn-cancel-m" id="dlg-tm-size" style="text-align:left;">🔢 サイズ変更 → ${nextSize}人</button>
            <button type="button" class="btn btn-danger"   id="dlg-tm-delete" style="text-align:left;">🗑 テーブルを削除</button>
          </div>`,
         `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
       )
+      // 人数プルダウン変更を即反映
+      setTimeout(() => {
+        document.getElementById('dlg-tm-size-sel')?.addEventListener('change', e2 => {
+          updateTable(id, { size: Number(e2.target.value) }); render()
+        })
+      }, 50)
       // メニュー内ボタンのイベント委譲
       const handler = e2 => {
-        const b = e2.target.closest('#dlg-tm-rename, #dlg-tm-members, #dlg-tm-size, #dlg-tm-delete')
+        const b = e2.target.closest('#dlg-tm-rename, #dlg-tm-members, #dlg-tm-delete')
         if (!b) return
         _closeDlg(null)
         document.getElementById('dlg-body').removeEventListener('click', handler)
         if (b.id === 'dlg-tm-rename') dlgRenameTable(id)
         else if (b.id === 'dlg-tm-members') dlgEditMembers(id)
-        else if (b.id === 'dlg-tm-size') { updateTable(id, { size: nextSize }); render() }
         else if (b.id === 'dlg-tm-delete') {
           dlgConfirm(`<strong>${esc(tbl.label)}</strong> を削除しますか？`)
             .then(ok => { if (ok) { deleteTable(id); delete selectedTables[id]; render() } })

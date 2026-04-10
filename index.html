@@ -194,6 +194,18 @@ body {
   white-space: nowrap; flex-shrink: 0;
 }
 
+.score-row {
+  display: flex; align-items: center; gap: 2px; margin-top: 2px;
+}
+.score-input {
+  width: 64px; font-size: 16px; padding: 6px 8px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text);
+  text-align: center; font-weight: 600;
+}
+.score-input:focus { border-color: var(--warning); outline: none; }
+.score-unit { font-size: 12px; color: var(--text-dim); }
+
 .status-btn {
   font-size: 11px; padding: 4px 10px; border-radius: 10px;
   border: 1px solid; cursor: pointer; white-space: nowrap; font-weight: 600;
@@ -1295,10 +1307,13 @@ const refreshTableCard = (el, t) => {
     : seated.length
       ? seated.map(p => {
           const vpInput = (vpEnabled && t.status === 'playing' && currentMatch)
-            ? `<input type="number" class="vp-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
-                value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±点" style="width:52px;font-size:12px;padding:1px 4px;margin-left:auto;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);">`
+            ? `<div class="score-row no-drag">
+                <input type="number" class="score-input" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
+                  value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±" inputmode="numeric">
+                <span class="score-unit">pt</span>
+               </div>`
             : ''
-          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${vpInput}</div>`
+          return `<div class="table-player">${esc(p.name)}${vpInput}</div>`
         }).join('')
       : '<div class="table-empty">空席</div>'
 

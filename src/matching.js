@@ -35,16 +35,30 @@ export function generateMatching(waitingPlayers, emptyTables, allPlayers, matche
   if (!waitingPlayers.length || !emptyTables.length) return []
 
   let pool = shuffle ? shuffleArray([...waitingPlayers]) : [...waitingPlayers]
-  const assignments = []
+
+  // 満席テーブルを先に、端数テーブルを末尾に配置
+  const fullTables = []
+  let partialTable = null
+  let remaining = pool.length
 
   for (const table of emptyTables) {
     const minRequired = minFill > 0 ? minFill : table.size
-    const actualSize = Math.min(pool.length, table.size)
-    if (actualSize < minRequired) continue
+    if (remaining >= table.size) {
+      fullTables.push(table)
+      remaining -= table.size
+    } else if (remaining >= minRequired) {
+      partialTable = table
+      remaining = 0
+    }
+  }
+  const orderedTables = [...fullTables, ...(partialTable ? [partialTable] : [])]
 
+  const assignments = []
+  for (const table of orderedTables) {
+    const actualSize = Math.min(pool.length, table.size)
+    if (actualSize < 1) continue
     const best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap)
     if (!best) continue
-
     assignments.push({ tableId: table.id, playerIds: best })
     pool = pool.filter(p => !best.includes(p.id))
   }

@@ -558,18 +558,33 @@ body {
 
   .panel-resizer { display: none; }
 
-  .canvas-wrap { min-height: 60vh; }
+  .canvas-wrap { min-height: auto; overflow-y: auto; }
 
-  #canvas { min-width: 100%; min-height: 800px; }
+  #canvas {
+    min-width: 0; min-height: 0;
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 10px; position: relative;
+    background-size: 0; /* ドットパターン非表示 */
+  }
 
-  .table-card { width: 180px; }
+  .table-card {
+    position: relative !important; left: auto !important; top: auto !important;
+    width: calc(50% - 5px); min-width: 150px;
+  }
   .table-player { font-size: 13px; }
   .table-label { font-size: 14px; }
 
-  .matching-bar { height: auto; }
+  .room-obj { display: none; } /* スマホではオブジェクト非表示 */
+
+  .matching-bar {
+    height: auto; position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 100; box-shadow: 0 -2px 12px var(--shadow-strong);
+  }
   .matching-bar-inner { padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
   .matching-bar .btn { min-height: 40px; padding: 8px 14px; }
   .hint { display: none; }
+  /* マッチングバー分の下余白 */
+  .app-body { padding-bottom: 70px; }
 
   .player-item { padding: 8px 8px; }
   .status-btn { min-height: 34px; padding: 6px 12px; }
@@ -585,8 +600,8 @@ body {
 @media (max-width: 480px) {
   .header-actions .btn { font-size: 10px; padding: 4px 6px; }
   .player-name { font-size: 13px; }
-  .player-item { padding: 4px 5px; gap: 3px; }
-  .table-card { width: 160px; }
+  .player-item { padding: 6px 5px; gap: 3px; }
+  .table-card { width: 100% !important; min-width: 0; }
   .table-player { font-size: 13px; }
 }
 </style>

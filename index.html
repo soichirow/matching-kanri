@@ -633,8 +633,6 @@ body {
   <header class="app-header">
     <h1>マッチング管理</h1>
     <div class="header-actions">
-      <button id="btn-add-player"    class="btn btn-monitor">＋ プレイヤー</button>
-      <button id="btn-add-table"     class="btn btn-monitor">＋ テーブル</button>
       <span style="flex:1;"></span>
       <button id="btn-standings"     class="btn btn-monitor" title="順位表" style="padding:6px 10px;">🏆</button>
       <button id="btn-theme"         class="btn btn-monitor" title="テーマ切替" style="padding:6px 10px;">🌙</button>
@@ -1568,7 +1566,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 人数で一括追加（インライン）
   const doQuickAddPlayers = () => {
     const count = parseInt(document.getElementById('quick-add-count')?.value ?? '0', 10)
-    if (!count || count < 1) { toast('人数を入力してください'); return }
+    if (!count || count < 1) return
+    if (count === 1) { dlgAddPlayer(); return }
     const existing = new Set(getPlayers().map(p => p.name))
     let maxNum = 0
     existing.forEach(name => {
@@ -2073,13 +2072,12 @@ document.addEventListener('DOMContentLoaded', () => {
     `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
   ))
 
-  document.getElementById('btn-add-player').addEventListener('click', dlgAddPlayer)
   document.getElementById('btn-quick-add').addEventListener('click', doQuickAddPlayers)
-  document.getElementById('btn-add-table').addEventListener('click', dlgAddTable)
 
   const doQuickAddTables = () => {
     const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
-    if (!count || count < 1) { toast('テーブル数を入力してください'); return }
+    if (!count || count < 1) return
+    if (count === 1) { dlgAddTable(); return }
     const existing = new Set(getTables().map(t => t.label))
     let maxNum = 0
     existing.forEach(label => {

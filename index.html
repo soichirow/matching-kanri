@@ -161,16 +161,13 @@ body {
 }
 
 .player-item.status-waiting  { border-color: var(--accent2); }
-.player-item.status-excluded { border-color: var(--text-dim); opacity: 0.45; }
-/* 旧ステータス互換 */
-.player-item.status-break    { border-color: var(--text-dim); opacity: 0.45; }
+.player-item.status-excluded,
+.player-item.status-break,
 .player-item.status-left     { border-color: var(--text-dim); opacity: 0.45; }
 .player-item.status-playing {
   border-color: var(--success);
   background: rgba(67, 233, 123, 0.10);
 }
-.player-item.status-break   { border-color: var(--warning); opacity: 0.7; }
-.player-item.status-left    { border-color: var(--text-dim); opacity: 0.38; }
 
 .player-name { flex: 1; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .player-name:hover { color: var(--accent2); }
@@ -210,9 +207,8 @@ body {
 }
 .status-btn.s-waiting  { color: var(--accent2);  border-color: var(--accent2);  background: rgba(79,195,247,.12); }
 .status-btn.s-playing  { color: var(--success);  border-color: var(--success);  background: rgba(67,233,123,.15); cursor: default; }
-.status-btn.s-excluded { color: var(--text-dim); border-color: var(--border);   background: transparent; }
-/* 旧ステータス互換 */
-.status-btn.s-break    { color: var(--text-dim); border-color: var(--border);   background: transparent; }
+.status-btn.s-excluded,
+.status-btn.s-break,
 .status-btn.s-left     { color: var(--text-dim); border-color: var(--border);   background: transparent; }
 .status-btn:hover { filter: brightness(1.2); }
 
@@ -621,7 +617,6 @@ body {
   .player-name { font-size: 13px; }
   .player-item { padding: 6px 5px; gap: 3px; }
   .table-card { width: 100% !important; min-width: 0; }
-  .table-player { font-size: 13px; }
 }
 </style>
 </head>

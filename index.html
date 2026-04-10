@@ -1377,15 +1377,16 @@ const finishTable = id => {
 const finishAllTables = () => {
   const playing = getTables().filter(t => t.status === 'playing')
   if (!playing.length) return
-  // スコア未入力チェック
+  let msg = `${playing.length}卓を一括終了しますか？`
   if (getSettings().enableVP) {
     const matches = getMatches()
     const noScore = playing.filter(t => {
       const m = [...matches].reverse().find(m => m.tableId === t.id)
       return m && !m.scores
     })
-    if (noScore.length && !confirm(`${noScore.length}卓のスコアが未入力です。終了しますか？`)) return
+    if (noScore.length) msg += `\n（${noScore.length}卓のスコアが未入力です）`
   }
+  if (!confirm(msg)) return
   saveUndoSnapshot(`全テーブル終了（${playing.length}卓）`)
   playing.forEach(t => {
     t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))

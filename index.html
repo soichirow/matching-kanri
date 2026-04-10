@@ -200,6 +200,8 @@ body {
 .status-btn.s-left     { color: var(--text-dim); border-color: var(--border);   background: transparent; }
 .status-btn:hover { filter: brightness(1.2); }
 
+.match-chk { display: none; }
+.check-mode .match-chk { display: inline; }
 .player-item.match-checked {
   outline: 1px solid var(--accent);
   background: rgba(124,111,247,0.10);
@@ -638,6 +640,7 @@ body {
     <aside class="player-panel" id="player-panel">
       <div class="panel-toolbar">
         <span id="player-stats" class="player-stats"></span>
+        <button class="panel-tool-btn" id="btn-toggle-checks" title="選択モード切替">☑</button>
       </div>
       <div id="player-list"></div>
     </aside>
@@ -1108,13 +1111,24 @@ const render = () => {
   renderMatchingBar()
 }
 
+const countRounds = () => {
+  const matches = getMatches()
+  if (!matches.length) return 0
+  let rounds = 1
+  for (let i = 1; i < matches.length; i++) {
+    if (matches[i].timestamp - matches[i - 1].timestamp > 5000) rounds++
+  }
+  return rounds
+}
+
 const renderPlayerStats = () => {
   const el = document.getElementById('player-stats')
   if (!el) return
   const ps = getPlayers()
   const c  = s => ps.filter(p => p.status === s).length
   const excluded = ps.filter(p => ['excluded','break','left'].includes(p.status)).length
-  el.innerHTML = `<span style="color:var(--accent2)">待機${c('waiting')}</span> <span style="color:var(--success)">対戦${c('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
+  const round = countRounds()
+  el.innerHTML = `${round ? `<span style="color:var(--accent)">R${round}</span> ` : ''}<span style="color:var(--accent2)">待機${c('waiting')}</span> <span style="color:var(--success)">対戦${c('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
 }
 
 const STATUS_ORDER = { playing: 0, waiting: 1, excluded: 2, break: 2, left: 2 }
@@ -2006,12 +2020,20 @@ document.addEventListener('DOMContentLoaded', () => {
         </table>
       </div>`,
       `<button class="btn btn-cancel-m" id="dlg-copy-standings" style="margin-right:auto;">📋 コピー</button>
+       <button class="btn btn-cancel-m" id="dlg-dl-csv">💾 CSV</button>
        <button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
     )
-    // コピーボタンのイベント
     setTimeout(() => {
       document.getElementById('dlg-copy-standings')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(tsvData).then(() => toast('順位表をコピーしました（Excel貼り付け可）'))
+        navigator.clipboard.writeText(tsvData).then(() => toast('順位表をコピーしました'))
+      })
+      document.getElementById('dlg-dl-csv')?.addEventListener('click', () => {
+        const csvRows = tsvData.replace(/\t/g, ',')
+        const bom = '\uFEFF'
+        const blob = new Blob([bom + csvRows], { type: 'text/csv;charset=utf-8' })
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+        a.download = `順位表_${new Date().toISOString().slice(0,10)}.csv`; a.click()
+        toast('CSVをダウンロードしました')
       })
     }, 50)
   })
@@ -2019,37 +2041,35 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-help').addEventListener('click', () => _openDlg(
     'ヘルプ — 使い方ガイド',
     `<div style="max-height:380px;overflow-y:auto;font-size:13px;line-height:1.7;">
-      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🎲 マッチングアルゴリズム</h3>
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🎲 マッチング</h3>
       <p style="margin:0 0 10px;">
-        スコアベースの組み合わせ最適化を使用します。<br>
-        <strong>過去に対戦済みのペア</strong>を避け、<strong>異なるグループ</strong>のプレイヤーを優先的に組み合わせます。<br>
-        複数テーブルにマッチングする場合、席移動が最小になるテーブル割り当てを自動で選びます。
+        過去の対戦ペアを避け、異なるグループを優先して組み合わせます。<br>
+        複数テーブル時は席移動が最小になる配置を自動選択します。<br>
+        テーブル人数は2〜8人に対応。ラウンド数はステータスバーに自動表示されます。
       </p>
 
       <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">🏷 グループ (A〜E)</h3>
       <p style="margin:0 0 10px;">
-        同じグループのプレイヤー同士は<strong>同じテーブルになりにくく</strong>なります。<br>
-        使い方の例：<br>
-        ・所属チームやサークルで分ける<br>
-        ・レベル帯（初心者/中級/上級）で分ける<br>
-        ・友人グループを分けて新しい対戦相手と当たりやすくする
+        同グループ同士は同卓になりにくくなります。<br>
+        例：チーム分け、レベル帯、友人グループなど
       </p>
 
-      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">✅ チェック＆選択</h3>
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">☑ 選択モード</h3>
       <p style="margin:0 0 10px;">
-        <strong>プレイヤーのチェック</strong>：チェックした人だけをマッチング対象にできます（Shift+クリックで範囲選択）<br>
-        <strong>テーブルの選択</strong>：選択したテーブルだけに割り当てます（未選択時は全空きテーブルが対象）
+        サイドバーの☑ボタンで選択モードON → 特定プレイヤーだけをマッチング対象にできます（Shift+クリックで範囲選択）<br>
+        テーブルの「選択」チェックで対象卓を絞れます（未選択時は全空きテーブルが対象）
       </p>
 
       <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⚡ 点数の記録</h3>
       <p style="margin:0 0 10px;">
-        設定で「点数を記録する」をONにすると、対戦中のテーブルに点数入力欄が表示されます（±対応）。<br>
-        「マッチングに点数を反映する」をONにすると、累計点数が近いプレイヤー同士が同卓になりやすくなります。
+        設定で「点数を記録する」をONにすると、対戦中のテーブルに±の点数入力欄が表示されます。<br>
+        🏆ボタンで順位表を表示、📋コピーや💾CSVダウンロードで結果を出力できます。
       </p>
 
-      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⌨ ショートカット</h3>
+      <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);">⌨ その他</h3>
       <p style="margin:0;">
-        <strong>Ctrl+Z</strong>：直前の操作を元に戻す（マッチング確定、テーブル終了など）
+        <strong>Ctrl+Z / ↩ボタン</strong>：直前の操作を元に戻す<br>
+        <strong>⚙ 設定</strong>：テーマ切替、点数ON/OFF、データクリアなど
       </p>
     </div>`,
     `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
@@ -2350,6 +2370,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.getElementById('btn-open-paste').addEventListener('click', openPasteModal)
+  document.getElementById('btn-toggle-checks').addEventListener('click', () => {
+    document.getElementById('player-panel').classList.toggle('check-mode')
+    const active = document.getElementById('player-panel').classList.contains('check-mode')
+    document.getElementById('btn-toggle-checks').style.background = active ? 'var(--accent)' : ''
+    document.getElementById('btn-toggle-checks').style.color = active ? 'white' : ''
+    if (!active) { checkedPlayers.clear(); renderPlayers(); renderPlayerStats() }
+  })
   document.getElementById('btn-paste-close').addEventListener('click', closePasteModal)
   document.getElementById('btn-paste-cancel').addEventListener('click', closePasteModal)
   document.getElementById('btn-paste-import').addEventListener('click', doImport)

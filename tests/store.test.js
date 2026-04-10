@@ -233,5 +233,56 @@ describe('統合: プレイヤー追加 → マッチング → スコア記録'
     const totalScore = Object.values(scoreMap).reduce((a, b) => a + b, 0)
     expect(Object.keys(scoreMap)).toHaveLength(8)
     expect(totalScore).toBe(12 + (-3) + 7 + 0 + (-5) + 10 + 3 + (-2)) // = 22
+
+    // 7. 全テーブル終了
+    getTables().filter(t => t.status === 'playing').forEach(t => {
+      t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
+      updateTable(t.id, { status: 'empty', playerIds: [] })
+    })
+    expect(getPlayers().filter(p => p.status === 'waiting')).toHaveLength(8)
+    expect(getTables().filter(t => t.status === 'empty')).toHaveLength(2)
+
+    // 8. 2ラウンド目のマッチング（対戦済みペアが避けられる）
+    const { optimizeTableAssignment } = await import('../src/matching.js')
+    const waiting2 = getPlayers().filter(p => p.status === 'waiting')
+    const empty2 = getTables().filter(t => t.status === 'empty')
+    const result2 = generateMatching(waiting2, empty2, getPlayers(), getMatches())
+    expect(result2).toHaveLength(2)
+
+    // 席移動最小化の適用
+    const optimized = optimizeTableAssignment(result2, getMatches())
+    expect(optimized).toHaveLength(2)
+    const allIds = optimized.flatMap(r => r.playerIds)
+    expect(new Set(allIds).size).toBe(8) // 重複なし
+  })
+})
+
+describe('統合: 8人テーブル対応', () => {
+  it('8人テーブルにマッチングできる', async () => {
+    const { generateMatching } = await import('../src/matching.js')
+    for (let i = 1; i <= 8; i++) addPlayer(`P${i}`)
+    addTable('大卓', 8)
+    const result = generateMatching(
+      getPlayers().filter(p => p.status === 'waiting'),
+      getTables().filter(t => t.status === 'empty'),
+      getPlayers(), getMatches()
+    )
+    expect(result).toHaveLength(1)
+    expect(result[0].playerIds).toHaveLength(8)
+  })
+})
+
+describe('統合: minFill=1でcount=1のテーブル割り当て', () => {
+  it('1人でもテーブルに配席される', async () => {
+    const { generateMatching } = await import('../src/matching.js')
+    addPlayer('ソロ')
+    addTable('T', 4)
+    const result = generateMatching(
+      getPlayers().filter(p => p.status === 'waiting'),
+      getTables().filter(t => t.status === 'empty'),
+      getPlayers(), getMatches(), false, 1
+    )
+    expect(result).toHaveLength(1)
+    expect(result[0].playerIds).toHaveLength(1)
   })
 })

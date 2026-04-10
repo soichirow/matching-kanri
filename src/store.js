@@ -76,8 +76,8 @@ export function addTable(label, size = 4) {
     size,
     status: 'empty',
     playerIds: [],
-    x: 40 + (tables.length % 4) * 230,
-    y: 40 + Math.floor(tables.length / 4) * 200,
+    x: 40 + (tables.length % 5) * 260,
+    y: 40 + Math.floor(tables.length / 5) * 260,
   }
   tables.push(table)
   save(KEYS.TABLES, tables)

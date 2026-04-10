@@ -1295,7 +1295,7 @@ const refreshTableCard = (el, t) => {
   }
 
   const playersHtml = pending
-    ? `<div class="pending-badge">仮マッチング！！</div>` +
+    ? `<div class="pending-badge">仮マッチ</div>` +
       pending.playerIds.map(id => {
         const p = players.find(x => x.id === id)
         return `<div class="table-player pending-player">${esc(p?.name ?? '?')}</div>`
@@ -1341,7 +1341,7 @@ const renderMatchingBar = () => {
   const hasPending = pendingMatches.length > 0
   const hasPlaying = getTables().some(t => t.status === 'playing')
   preview.innerHTML = hasPending
-    ? `<span class="pending-badge" style="font-size:13px;">仮マッチング中 ${pendingMatches.length}卓</span>`
+    ? `<span class="pending-badge" style="font-size:13px;">仮マッチ中 ${pendingMatches.length}卓</span>`
     : ''
   if (confirmBtn) confirmBtn.style.display = hasPending ? '' : 'none'
   if (cancelBtn)  cancelBtn.style.display  = hasPending ? '' : 'none'

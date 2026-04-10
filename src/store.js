@@ -129,3 +129,74 @@ export function updateMatchScores(matchId, scores) {
 export function clearMatches() {
   save(KEYS.MATCHES, [])
 }
+
+export function buildVpMap(matches) {
+  const map = {}
+  matches.forEach(m => {
+    if (!m.scores) return
+    Object.entries(m.scores).forEach(([pid, vp]) => {
+      map[pid] = (map[pid] ?? 0) + (vp ?? 0)
+    })
+  })
+  return map
+}
+
+export function deleteMatchByTable(tableId) {
+  // そのテーブルで記録された直近1件のマッチを削除
+  const matches = getMatches()
+  const idx = matches.map((m,i) => [m,i]).reverse().find(([m]) => m.tableId === tableId)?.[1]
+  if (idx !== undefined) {
+    matches.splice(idx, 1)
+    save(KEYS.MATCHES, matches)
+  }
+}
+
+// ── Settings ────────────────────────────────────────────
+
+export function getSettings() {
+  try {
+    const r = localStorage.getItem('mg_settings')
+    return r ? JSON.parse(r) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveSettings(s) {
+  localStorage.setItem('mg_settings', JSON.stringify(s))
+}
+
+// ── Room Objects ────────────────────────────────────────
+
+export function getRoomObjects() {
+  return load('mg_objects')
+}
+
+export function addRoomObject(label, color = '#4fc3f7', w = 240, h = 130) {
+  const objs = getRoomObjects()
+  const obj = {
+    id: generateId(),
+    label,
+    color,
+    x: 60 + (objs.length % 5) * 60,
+    y: 60 + Math.floor(objs.length / 5) * 60,
+    w,
+    h,
+  }
+  objs.push(obj)
+  save('mg_objects', objs)
+  return obj
+}
+
+export function updateRoomObject(id, updates) {
+  const objs = getRoomObjects()
+  const idx = objs.findIndex(o => o.id === id)
+  if (idx === -1) return null
+  objs[idx] = { ...objs[idx], ...updates }
+  save('mg_objects', objs)
+  return objs[idx]
+}
+
+export function deleteRoomObject(id) {
+  save('mg_objects', getRoomObjects().filter(o => o.id !== id))
+}

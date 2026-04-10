@@ -2,9 +2,9 @@
  * store.js — localStorage を使ったデータ永続化層
  *
  * データモデル:
- *   Player  { id, name, group: 'A'|'B'|'C'|'D'|'E'|null, status: 'waiting'|'playing'|'break'|'left' }
- *   Table   { id, label, size: 2|3|4, status: 'empty'|'playing', playerIds: string[], x, y }
- *   Match   { id, tableId, playerIds: string[], timestamp }
+ *   Player  { id, name, group: string|null, status: 'waiting'|'playing'|'excluded' }
+ *   Table   { id, label, size: 2-8, status: 'empty'|'playing', playerIds: string[], x, y }
+ *   Match   { id, tableId, playerIds: string[], timestamp, scores: {[pid]:number}|null }
  */
 
 const KEYS = {

@@ -298,6 +298,11 @@ describe('buildScoreMap', () => {
     expect(buildScoreMap(matches)).toEqual({ p1: -15 })
   })
 
+  it('スコア0を正しく記録', () => {
+    const matches = [{ playerIds: ['p1', 'p2'], scores: { p1: 0, p2: 0 } }]
+    expect(buildScoreMap(matches)).toEqual({ p1: 0, p2: 0 })
+  })
+
   it('スコアありとなしが混在', () => {
     const matches = [
       { playerIds: ['p1', 'p2'], scores: { p1: 10, p2: 5 } },
@@ -305,5 +310,98 @@ describe('buildScoreMap', () => {
       { playerIds: ['p2', 'p3'], scores: { p2: 3, p3: -2 } },
     ]
     expect(buildScoreMap(matches)).toEqual({ p1: 10, p2: 8, p3: -2 })
+  })
+})
+
+// ── カスタムグループ名 ──────────────────────────────────
+
+describe('カスタムグループ名', () => {
+  const CP = [
+    { id: 'c1', name: 'Alice', group: 'チームX', status: 'waiting' },
+    { id: 'c2', name: 'Bob',   group: 'チームX', status: 'waiting' },
+    { id: 'c3', name: 'Carol', group: 'チームY', status: 'waiting' },
+  ]
+
+  it('同カスタムグループ → ペナルティ5', () => {
+    expect(pairPenalty('c1', 'c2', CP, [])).toBe(5)
+  })
+
+  it('異カスタムグループ → ペナルティ0', () => {
+    expect(pairPenalty('c1', 'c3', CP, [])).toBe(0)
+  })
+})
+
+// ── 8人テーブル ──────────────────────────────────────────
+
+describe('8人テーブル', () => {
+  const P8 = Array.from({ length: 8 }, (_, i) => ({
+    id: `q${i}`, name: `P${i}`, group: null, status: 'waiting'
+  }))
+
+  it('8人テーブルに8人を割り当て', () => {
+    const result = generateMatching(P8, [{ id: 'big', size: 8, status: 'empty' }], P8, [])
+    expect(result).toHaveLength(1)
+    expect(result[0].playerIds).toHaveLength(8)
+  })
+
+  it('8人テーブルでminFill=1、7人で配席', () => {
+    const result = generateMatching(P8.slice(0, 7), [{ id: 'big', size: 8, status: 'empty' }], P8, [], false, 1)
+    expect(result).toHaveLength(1)
+    expect(result[0].playerIds).toHaveLength(7)
+  })
+})
+
+// ── pairPenalty 追加エッジケース ──────────────────────────
+
+describe('pairPenalty 追加', () => {
+  it('3回対戦済み → 30', () => {
+    const matches = [
+      { playerIds: ['p1', 'p3'] },
+      { playerIds: ['p1', 'p3'] },
+      { playerIds: ['p1', 'p3'] },
+    ]
+    expect(pairPenalty('p1', 'p3', P, matches)).toBe(30)
+  })
+
+  it('vpMap={}（空マップ）でペナルティ0', () => {
+    expect(pairPenalty('p1', 'p3', P, [], {})).toBe(0)
+  })
+})
+
+// ── optimizeTableAssignment 9卓以上 ──────────────────────
+
+describe('optimizeTableAssignment 9卓以上', () => {
+  it('10卓でgreedy fallbackが動作する', () => {
+    const assignments = Array.from({ length: 10 }, (_, i) => ({
+      tableId: `t${i}`, playerIds: [`p${i * 2}`, `p${i * 2 + 1}`]
+    }))
+    const matches = [
+      { tableId: 't0', playerIds: ['p0', 'p1'] },
+      { tableId: 't1', playerIds: ['p2', 'p3'] },
+    ]
+    const result = optimizeTableAssignment(assignments, matches)
+    expect(result).toHaveLength(10)
+    const all = result.flatMap(r => r.playerIds)
+    expect(new Set(all).size).toBe(20)
+  })
+})
+
+// ── generateMatching 端数テーブル配置順 ──────────────────
+
+describe('generateMatching 端数配置', () => {
+  it('13人×4人卓4つ → 満席3卓が先、端数1卓が末尾', () => {
+    const players = Array.from({ length: 13 }, (_, i) => ({
+      id: `r${i}`, name: `R${i}`, group: null, status: 'waiting'
+    }))
+    const tables = Array.from({ length: 4 }, (_, i) => ({
+      id: `rt${i}`, size: 4, status: 'empty'
+    }))
+    const result = generateMatching(players, tables, players, [], true, 1)
+    // 最初の3卓は4人、最後の1卓は1人
+    expect(result).toHaveLength(4)
+    expect(result[0].playerIds).toHaveLength(4)
+    expect(result[1].playerIds).toHaveLength(4)
+    expect(result[2].playerIds).toHaveLength(4)
+    expect(result[3].playerIds).toHaveLength(1)
   })
 })

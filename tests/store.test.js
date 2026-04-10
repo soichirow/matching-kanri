@@ -284,3 +284,51 @@ describe('統合: minFill=1でcount=1のテーブル割り当て', () => {
     expect(result[0].playerIds).toHaveLength(1)
   })
 })
+
+describe('カスタムグループ名', () => {
+  it('日本語グループ名を保存・取得', () => {
+    const p = addPlayer('田中', 'チームα')
+    expect(p.group).toBe('チームα')
+    expect(getPlayers()[0].group).toBe('チームα')
+  })
+
+  it('長いグループ名を保存', () => {
+    const longName = 'とても長いグループ名のテスト用文字列'
+    const p = addPlayer('鈴木', longName)
+    expect(p.group).toBe(longName)
+  })
+})
+
+describe('統合: 3ラウンド連続実行', () => {
+  it('履歴が正しく蓄積される', async () => {
+    const { generateMatching } = await import('../src/matching.js')
+
+    for (let i = 1; i <= 8; i++) addPlayer(`P${i}`)
+    addTable('T1', 4); addTable('T2', 4)
+
+    for (let round = 0; round < 3; round++) {
+      const waiting = getPlayers().filter(p => p.status === 'waiting')
+      const empty = getTables().filter(t => t.status === 'empty')
+      const result = generateMatching(waiting, empty, getPlayers(), getMatches(), true)
+      expect(result).toHaveLength(2)
+
+      // 確定
+      result.forEach(({ tableId, playerIds }) => {
+        addMatch(tableId, playerIds)
+        updateTable(tableId, { status: 'playing', playerIds })
+        playerIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
+      })
+
+      // 終了
+      getTables().forEach(t => {
+        t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
+        updateTable(t.id, { status: 'empty', playerIds: [] })
+      })
+    }
+
+    // 3ラウンド × 2卓 = 6マッチ
+    expect(getMatches()).toHaveLength(6)
+    // 全員待機に戻っている
+    expect(getPlayers().filter(p => p.status === 'waiting')).toHaveLength(8)
+  })
+})

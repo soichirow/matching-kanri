@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pairPenalty, groupPenalty, generateMatching } from '../src/matching.js'
+import { pairPenalty, groupPenalty, generateMatching, optimizeTableAssignment, buildScoreMap } from '../src/matching.js'
 
 // テスト用プレイヤー
 const P = [
@@ -57,6 +57,34 @@ describe('pairPenalty', () => {
     ]
     expect(pairPenalty('x1', 'x2', mixed, [])).toBe(0)
   })
+
+  // 点数ペナルティ
+  it('vpMap指定なしなら点数ペナルティ0', () => {
+    expect(pairPenalty('p1', 'p3', P, [])).toBe(0)
+    expect(pairPenalty('p1', 'p3', P, [], null)).toBe(0)
+  })
+
+  it('vpMapで点数差0 → 追加ペナルティ0', () => {
+    const vpMap = { p1: 10, p3: 10 }
+    expect(pairPenalty('p1', 'p3', P, [], vpMap)).toBe(0)
+  })
+
+  it('vpMapで点数差10 → 追加ペナルティ2 (floor(10/5))', () => {
+    const vpMap = { p1: 20, p3: 10 }
+    expect(pairPenalty('p1', 'p3', P, [], vpMap)).toBe(2)
+  })
+
+  it('vpMapでマイナス点数対応', () => {
+    const vpMap = { p1: -5, p3: 10 }
+    // 差=15, floor(15/5)=3
+    expect(pairPenalty('p1', 'p3', P, [], vpMap)).toBe(3)
+  })
+
+  it('vpMapに片方のプレイヤーがない場合は0扱い', () => {
+    const vpMap = { p1: 10 }
+    // 差=10, floor(10/5)=2
+    expect(pairPenalty('p1', 'p3', P, [], vpMap)).toBe(2)
+  })
 })
 
 // ── groupPenalty ─────────────────────────────────────────
@@ -71,8 +99,13 @@ describe('groupPenalty', () => {
   })
 
   it('4人テーブル(A,A,B,B)のペアは p1-p2(5) + p3-p4(5) = 10', () => {
-    // p1-p2: 5, p1-p3: 0, p1-p4: 0, p2-p3: 0, p2-p4: 0, p3-p4: 5
     expect(groupPenalty(['p1', 'p2', 'p3', 'p4'], P, [])).toBe(10)
+  })
+
+  it('vpMap付きでペナルティが加算される', () => {
+    const vpMap = { p1: 0, p3: 10 }
+    // 異グループ(0) + 点数差10→2 = 2
+    expect(groupPenalty(['p1', 'p3'], P, [], vpMap)).toBe(2)
   })
 })
 
@@ -105,9 +138,7 @@ describe('generateMatching', () => {
     expect(result[0].playerIds).toHaveLength(4)
   })
 
-  it('同グループ同士を避ける（異グループペアが優先）', () => {
-    // p1(A), p2(A), p3(B) の3人から2人テーブル
-    // p1-p3(0) か p2-p3(0) を選ぶはず → p1-p2(5) にはならない
+  it('同グループ同士を避ける', () => {
     const result = generateMatching(
       [P[0], P[1], P[2]],
       [{ id: 't1', size: 2, status: 'empty' }],
@@ -118,10 +149,9 @@ describe('generateMatching', () => {
   })
 
   it('対戦済みの組み合わせを避ける', () => {
-    // p1 と p3 は対戦済み → p1-p5 が選ばれるはず
     const matches = [{ playerIds: ['p1', 'p3'] }]
     const result = generateMatching(
-      [P[0], P[2], P[4]], // p1, p3, p5
+      [P[0], P[2], P[4]],
       [{ id: 't1', size: 2, status: 'empty' }],
       P, matches
     )
@@ -133,19 +163,147 @@ describe('generateMatching', () => {
     const result = generateMatching(P, T2, P, [])
     expect(result).toHaveLength(2)
     const all = result.flatMap(r => r.playerIds)
-    expect(new Set(all).size).toBe(all.length) // 重複なし
+    expect(new Set(all).size).toBe(all.length)
   })
 
   it('プレイヤーが足りないテーブルはスキップ', () => {
-    // 待機3人で2人テーブル×2 → 1テーブルのみ割り当て可能
     const result = generateMatching(P.slice(0, 3), T2, P, [])
     expect(result).toHaveLength(1)
   })
 
-  it('shuffle=trueで再生成できる（別解が生まれる）', () => {
-    // シャッフルで例外が発生しないことを確認
+  it('shuffle=trueで例外なく動作', () => {
     expect(() => generateMatching(P, T2, P, [], true)).not.toThrow()
     const r = generateMatching(P, T2, P, [], true)
     expect(r.length).toBeGreaterThan(0)
+  })
+
+  // minFill テスト
+  it('minFill=1でプレイヤー不足でも配席する', () => {
+    // 3人で4人テーブル → minFill=0ならスキップ、minFill=1なら配席
+    const result0 = generateMatching(P.slice(0, 3), T4, P, [], false, 0)
+    expect(result0).toHaveLength(0)
+
+    const result1 = generateMatching(P.slice(0, 3), T4, P, [], false, 1)
+    expect(result1).toHaveLength(1)
+    expect(result1[0].playerIds).toHaveLength(3)
+  })
+
+  it('minFill=2で1人しかいない場合はスキップ', () => {
+    const result = generateMatching(P.slice(0, 1), T4, P, [], false, 2)
+    expect(result).toHaveLength(0)
+  })
+
+  // vpMap テスト
+  it('vpMap指定時に点数が近いプレイヤー同士を優先', () => {
+    // p1=100点, p2=0点, p3=95点 → p1とp3が組まれやすい
+    const vpMap = { p1: 100, p2: 0, p3: 95 }
+    const result = generateMatching(
+      [P[0], P[1], P[2]],
+      [{ id: 't1', size: 2, status: 'empty' }],
+      P, [], false, 0, vpMap
+    )
+    const ids = result[0].playerIds
+    expect(ids).toContain('p1')
+    expect(ids).toContain('p3')
+  })
+})
+
+// ── optimizeTableAssignment ──────────────────────────────
+
+describe('optimizeTableAssignment', () => {
+  it('1卓の場合はそのまま返す', () => {
+    const input = [{ tableId: 't1', playerIds: ['p1', 'p2'] }]
+    expect(optimizeTableAssignment(input, [])).toEqual(input)
+  })
+
+  it('履歴なしの場合は元の割り当てを返す', () => {
+    const input = [
+      { tableId: 't1', playerIds: ['p1', 'p2'] },
+      { tableId: 't2', playerIds: ['p3', 'p4'] },
+    ]
+    const result = optimizeTableAssignment(input, [])
+    // 全プレイヤーが含まれている
+    const all = result.flatMap(r => r.playerIds)
+    expect(new Set(all)).toEqual(new Set(['p1', 'p2', 'p3', 'p4']))
+  })
+
+  it('前回と同じテーブルのプレイヤーが多い割り当てを選ぶ', () => {
+    // 前回: p1,p2はt1、p3,p4はt2にいた
+    const history = [
+      { tableId: 't1', playerIds: ['p1', 'p2'] },
+      { tableId: 't2', playerIds: ['p3', 'p4'] },
+    ]
+    // 今回のグループ分け結果が逆順で渡された場合
+    const input = [
+      { tableId: 't1', playerIds: ['p3', 'p4'] }, // p3,p4は前回t2にいた
+      { tableId: 't2', playerIds: ['p1', 'p2'] }, // p1,p2は前回t1にいた
+    ]
+    const result = optimizeTableAssignment(input, history)
+    // 最適化後: p1,p2→t1、p3,p4→t2 になるはず
+    const t1 = result.find(r => r.tableId === 't1')
+    const t2 = result.find(r => r.tableId === 't2')
+    expect(new Set(t1.playerIds)).toEqual(new Set(['p1', 'p2']))
+    expect(new Set(t2.playerIds)).toEqual(new Set(['p3', 'p4']))
+  })
+
+  it('3卓以上でも最適化できる', () => {
+    const history = [
+      { tableId: 'tA', playerIds: ['p1', 'p2'] },
+      { tableId: 'tB', playerIds: ['p3', 'p4'] },
+      { tableId: 'tC', playerIds: ['p5', 'p6'] },
+    ]
+    // ローテーション: A→B→C→A
+    const input = [
+      { tableId: 'tA', playerIds: ['p5', 'p6'] },
+      { tableId: 'tB', playerIds: ['p1', 'p2'] },
+      { tableId: 'tC', playerIds: ['p3', 'p4'] },
+    ]
+    const result = optimizeTableAssignment(input, history)
+    expect(result.find(r => r.tableId === 'tA').playerIds).toEqual(expect.arrayContaining(['p1', 'p2']))
+    expect(result.find(r => r.tableId === 'tB').playerIds).toEqual(expect.arrayContaining(['p3', 'p4']))
+    expect(result.find(r => r.tableId === 'tC').playerIds).toEqual(expect.arrayContaining(['p5', 'p6']))
+  })
+})
+
+// ── buildScoreMap ────────────────────────────────────────
+
+describe('buildScoreMap', () => {
+  it('スコアなしのマッチ → 空マップ', () => {
+    const matches = [
+      { playerIds: ['p1', 'p2'], scores: null },
+    ]
+    expect(buildScoreMap(matches)).toEqual({})
+  })
+
+  it('単一マッチのスコアを返す', () => {
+    const matches = [
+      { playerIds: ['p1', 'p2'], scores: { p1: 10, p2: 5 } },
+    ]
+    expect(buildScoreMap(matches)).toEqual({ p1: 10, p2: 5 })
+  })
+
+  it('複数マッチのスコアを累計する', () => {
+    const matches = [
+      { playerIds: ['p1', 'p2'], scores: { p1: 10, p2: 5 } },
+      { playerIds: ['p1', 'p3'], scores: { p1: -3, p3: 8 } },
+    ]
+    expect(buildScoreMap(matches)).toEqual({ p1: 7, p2: 5, p3: 8 })
+  })
+
+  it('マイナス点数の累計が正しい', () => {
+    const matches = [
+      { playerIds: ['p1'], scores: { p1: -10 } },
+      { playerIds: ['p1'], scores: { p1: -5 } },
+    ]
+    expect(buildScoreMap(matches)).toEqual({ p1: -15 })
+  })
+
+  it('スコアありとなしが混在', () => {
+    const matches = [
+      { playerIds: ['p1', 'p2'], scores: { p1: 10, p2: 5 } },
+      { playerIds: ['p1', 'p3'], scores: null },
+      { playerIds: ['p2', 'p3'], scores: { p2: 3, p3: -2 } },
+    ]
+    expect(buildScoreMap(matches)).toEqual({ p1: 10, p2: 8, p3: -2 })
   })
 })

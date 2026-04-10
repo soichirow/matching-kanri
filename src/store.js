@@ -110,10 +110,20 @@ export function addMatch(tableId, playerIds) {
     tableId,
     playerIds,
     timestamp: Date.now(),
+    scores: null,
   }
   matches.push(match)
   save(KEYS.MATCHES, matches)
   return match
+}
+
+export function updateMatchScores(matchId, scores) {
+  const matches = getMatches()
+  const idx = matches.findIndex(m => m.id === matchId)
+  if (idx === -1) return null
+  matches[idx].scores = scores
+  save(KEYS.MATCHES, matches)
+  return matches[idx]
 }
 
 export function clearMatches() {

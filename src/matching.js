@@ -4,72 +4,46 @@
  * スコアベースの貪欲法:
  *   同グループペア         +5点 (ペナルティ)
  *   過去に対戦済みペア     +(対戦回数 × 10)点
+ *   点数差ペナルティ       +(差 / 5)点 (vpMap指定時)
  *   スコアが低い組み合わせを優先する
  */
 
-/**
- * 2プレイヤー間のペナルティスコア
- * @param {string} a
- * @param {string} b
- * @param {Array} players
- * @param {Array} matches
- * @returns {number}
- */
-export function pairPenalty(a, b, players, matches) {
-  let score = 0
-
-  // 過去の対戦回数
+export function pairPenalty(a, b, players, matches, vpMap = null) {
   const count = matches.filter(m => m.playerIds.includes(a) && m.playerIds.includes(b)).length
-  score += count * 10
-
-  // 同グループ
   const pa = players.find(p => p.id === a)
   const pb = players.find(p => p.id === b)
-  if (pa && pb && pa.group && pa.group === pb.group) {
-    score += 5
+  const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? 5 : 0
+  let vpPen = 0
+  if (vpMap) {
+    const diff = Math.abs((vpMap[a] ?? 0) - (vpMap[b] ?? 0))
+    vpPen = Math.floor(diff / 5)
   }
-
-  return score
+  return count * 10 + groupPen + vpPen
 }
 
-/**
- * グループ(テーブル1卓分)の合計ペナルティ
- * @param {string[]} playerIds
- * @param {Array} players
- * @param {Array} matches
- * @returns {number}
- */
-export function groupPenalty(playerIds, players, matches) {
+export function groupPenalty(playerIds, players, matches, vpMap = null) {
   let total = 0
   for (let i = 0; i < playerIds.length; i++) {
     for (let j = i + 1; j < playerIds.length; j++) {
-      total += pairPenalty(playerIds[i], playerIds[j], players, matches)
+      total += pairPenalty(playerIds[i], playerIds[j], players, matches, vpMap)
     }
   }
   return total
 }
 
-/**
- * 待機プレイヤーを空テーブルに割り当てる
- *
- * @param {Array} waitingPlayers  status='waiting' のプレイヤー
- * @param {Array} emptyTables     割り当て対象の空テーブル
- * @param {Array} allPlayers      全プレイヤー (グループ情報参照用)
- * @param {Array} matches         対戦履歴
- * @param {boolean} shuffle       true なら入力をシャッフルして別解を探す
- * @returns {{ tableId: string, playerIds: string[] }[]}
- */
-export function generateMatching(waitingPlayers, emptyTables, allPlayers, matches, shuffle = false) {
+export function generateMatching(waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0, vpMap = null) {
   if (!waitingPlayers.length || !emptyTables.length) return []
 
   let pool = shuffle ? shuffleArray([...waitingPlayers]) : [...waitingPlayers]
   const assignments = []
 
   for (const table of emptyTables) {
-    if (pool.length < table.size) break
+    const minRequired = minFill > 0 ? minFill : table.size
+    const actualSize = Math.min(pool.length, table.size)
+    if (actualSize < minRequired) continue
 
-    const best = findBestGroup(pool, table.size, allPlayers, matches)
-    if (!best) break
+    const best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap)
+    if (!best) continue
 
     assignments.push({ tableId: table.id, playerIds: best })
     pool = pool.filter(p => !best.includes(p.id))
@@ -78,48 +52,90 @@ export function generateMatching(waitingPlayers, emptyTables, allPlayers, matche
   return assignments
 }
 
+export function optimizeTableAssignment(assignments, matches) {
+  if (assignments.length <= 1) return assignments
+
+  const lastTable = {}
+  matches.forEach(m => {
+    m.playerIds.forEach(pid => { lastTable[pid] = m.tableId })
+  })
+
+  const tableIds = assignments.map(a => a.tableId)
+  const groups = assignments.map(a => a.playerIds)
+
+  if (tableIds.length > 8) {
+    const usedTables = new Set()
+    const result = []
+    for (let gi = 0; gi < groups.length; gi++) {
+      let bestTid = null, bestStay = -1
+      for (const tid of tableIds) {
+        if (usedTables.has(tid)) continue
+        const stay = groups[gi].filter(pid => lastTable[pid] === tid).length
+        if (stay > bestStay) { bestStay = stay; bestTid = tid }
+      }
+      usedTables.add(bestTid)
+      result.push({ tableId: bestTid, playerIds: groups[gi] })
+    }
+    return result
+  }
+
+  const perms = permutations(tableIds)
+  let bestPerm = tableIds
+  let bestMoves = Infinity
+  for (const perm of perms) {
+    let moves = 0
+    perm.forEach((tid, gi) => {
+      groups[gi].forEach(pid => {
+        if (lastTable[pid] && lastTable[pid] !== tid) moves++
+      })
+    })
+    if (moves < bestMoves) { bestMoves = moves; bestPerm = perm }
+  }
+  return bestPerm.map((tid, i) => ({ tableId: tid, playerIds: groups[i] }))
+}
+
+export function buildScoreMap(matches) {
+  const map = {}
+  matches.forEach(m => {
+    if (!m.scores) return
+    Object.entries(m.scores).forEach(([pid, score]) => {
+      map[pid] = (map[pid] ?? 0) + (score ?? 0)
+    })
+  })
+  return map
+}
+
 // ── 内部関数 ──────────────────────────────────────────────
 
-function findBestGroup(players, size, allPlayers, matches) {
+function findBestGroup(players, size, allPlayers, matches, vpMap = null) {
   if (players.length < size) return null
-
   const ids = players.map(p => p.id)
 
-  // プレイヤー数が少ない場合は全組み合わせを試す
   if (ids.length <= 20) {
     const combos = combinations(ids, size)
     let best = null
     let bestScore = Infinity
     for (const combo of combos) {
-      const score = groupPenalty(combo, allPlayers, matches)
-      if (score < bestScore) {
-        bestScore = score
-        best = combo
-      }
+      const score = groupPenalty(combo, allPlayers, matches, vpMap)
+      if (score < bestScore) { bestScore = score; best = combo }
     }
     return best
   }
 
-  // 大人数の場合は貪欲法
-  return greedyGroup(ids, size, allPlayers, matches)
+  return greedyGroup(ids, size, allPlayers, matches, vpMap)
 }
 
-function greedyGroup(ids, size, allPlayers, matches) {
+function greedyGroup(ids, size, allPlayers, matches, vpMap) {
   const result = [ids[0]]
   const remaining = ids.slice(1)
 
   while (result.length < size && remaining.length > 0) {
     let bestIdx = 0
     let bestScore = Infinity
-
     for (let i = 0; i < remaining.length; i++) {
-      const score = groupPenalty([...result, remaining[i]], allPlayers, matches)
-      if (score < bestScore) {
-        bestScore = score
-        bestIdx = i
-      }
+      const score = groupPenalty([...result, remaining[i]], allPlayers, matches, vpMap)
+      if (score < bestScore) { bestScore = score; bestIdx = i }
     }
-
     result.push(remaining[bestIdx])
     remaining.splice(bestIdx, 1)
   }
@@ -135,6 +151,16 @@ function combinations(arr, size) {
     ...combinations(rest, size - 1).map(c => [first, ...c]),
     ...combinations(rest, size),
   ]
+}
+
+function permutations(arr) {
+  if (arr.length <= 1) return [arr]
+  const result = []
+  for (let i = 0; i < arr.length; i++) {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)]
+    for (const p of permutations(rest)) result.push([arr[i], ...p])
+  }
+  return result
 }
 
 function shuffleArray(arr) {

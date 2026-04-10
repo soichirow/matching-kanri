@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import {
   getPlayers, addPlayer, updatePlayer, deletePlayer,
   getTables,  addTable,  updateTable,  deleteTable,
-  getMatches, addMatch,  clearMatches,
+  getMatches, addMatch,  updateMatchScores, clearMatches,
 } from '../src/store.js'
 
 beforeEach(() => {
@@ -135,6 +135,38 @@ describe('addMatch', () => {
     expect(typeof m.timestamp).toBe('number')
     expect(m.id).toBeDefined()
   })
+
+  it('scores初期値はnull', () => {
+    const m = addMatch('t1', ['p1', 'p2'])
+    expect(m.scores).toBeNull()
+  })
+})
+
+describe('updateMatchScores', () => {
+  it('スコアを記録できる', () => {
+    const m = addMatch('t1', ['p1', 'p2'])
+    const updated = updateMatchScores(m.id, { p1: 10, p2: 5 })
+    expect(updated.scores).toEqual({ p1: 10, p2: 5 })
+    expect(getMatches()[0].scores).toEqual({ p1: 10, p2: 5 })
+  })
+
+  it('マイナス点数を記録できる', () => {
+    const m = addMatch('t1', ['p1', 'p2'])
+    const updated = updateMatchScores(m.id, { p1: -3, p2: 8 })
+    expect(updated.scores.p1).toBe(-3)
+    expect(updated.scores.p2).toBe(8)
+  })
+
+  it('スコアをnullに戻せる', () => {
+    const m = addMatch('t1', ['p1', 'p2'])
+    updateMatchScores(m.id, { p1: 10 })
+    updateMatchScores(m.id, null)
+    expect(getMatches()[0].scores).toBeNull()
+  })
+
+  it('存在しないIDはnullを返す', () => {
+    expect(updateMatchScores('no-such-id', { p1: 5 })).toBeNull()
+  })
 })
 
 describe('clearMatches', () => {
@@ -143,5 +175,63 @@ describe('clearMatches', () => {
     addMatch('t2', ['p3', 'p4'])
     clearMatches()
     expect(getMatches()).toHaveLength(0)
+  })
+})
+
+// ── 統合テスト: store + matching の連携 ──────────────────
+
+describe('統合: プレイヤー追加 → マッチング → スコア記録', () => {
+  it('実データでフルワークフローが動作する', async () => {
+    const { generateMatching, buildScoreMap } = await import('../src/matching.js')
+
+    // 1. プレイヤー追加
+    const players = []
+    for (let i = 1; i <= 8; i++) {
+      players.push(addPlayer(`プレイヤー${String(i).padStart(2, '0')}`, i <= 4 ? 'A' : 'B'))
+    }
+    expect(getPlayers()).toHaveLength(8)
+
+    // 2. テーブル追加
+    addTable('テーブル1', 4)
+    addTable('テーブル2', 4)
+    const tables = getTables()
+    expect(tables).toHaveLength(2)
+
+    // 3. マッチング実行
+    const waiting = getPlayers().filter(p => p.status === 'waiting')
+    const empty = getTables().filter(t => t.status === 'empty')
+    const result = generateMatching(waiting, empty, getPlayers(), getMatches())
+    expect(result).toHaveLength(2)
+    expect(result[0].playerIds).toHaveLength(4)
+
+    // 4. マッチング確定
+    result.forEach(({ tableId, playerIds }) => {
+      addMatch(tableId, playerIds)
+      updateTable(tableId, { status: 'playing', playerIds })
+      playerIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
+    })
+    expect(getPlayers().filter(p => p.status === 'playing')).toHaveLength(8)
+    expect(getTables().filter(t => t.status === 'playing')).toHaveLength(2)
+
+    // 5. スコア記録（プラス・マイナス混在）
+    const matches = getMatches()
+    updateMatchScores(matches[0].id, {
+      [result[0].playerIds[0]]: 12,
+      [result[0].playerIds[1]]: -3,
+      [result[0].playerIds[2]]: 7,
+      [result[0].playerIds[3]]: 0,
+    })
+    updateMatchScores(matches[1].id, {
+      [result[1].playerIds[0]]: -5,
+      [result[1].playerIds[1]]: 10,
+      [result[1].playerIds[2]]: 3,
+      [result[1].playerIds[3]]: -2,
+    })
+
+    // 6. スコア集計
+    const scoreMap = buildScoreMap(getMatches())
+    const totalScore = Object.values(scoreMap).reduce((a, b) => a + b, 0)
+    expect(Object.keys(scoreMap)).toHaveLength(8)
+    expect(totalScore).toBe(12 + (-3) + 7 + 0 + (-5) + 10 + 3 + (-2)) // = 22
   })
 })

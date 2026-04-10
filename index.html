@@ -674,17 +674,18 @@ body {
 
   <footer class="matching-bar">
     <div class="matching-bar-inner">
-      <button id="btn-undo"          class="btn btn-monitor" title="元に戻す">↩</button>
       <button id="btn-match"         class="btn btn-match">🎲 マッチング生成</button>
-      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;">
-        <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
-        規定人数以下でも配席
-      </label>
       <button id="btn-finish-all"    class="btn btn-finish"   style="display:none">⏹ 全終了</button>
-      <button id="btn-regen-match"   class="btn btn-regen"    style="display:none">🔄 再マッチング</button>
       <button id="btn-confirm-match" class="btn btn-confirm"  style="display:none">✅ 全確定</button>
-      <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none">✕ キャンセル</button>
-      <div id="match-preview" style="margin-left:8px;"></div>
+      <button id="btn-regen-match"   class="btn btn-regen"    style="display:none">🔄</button>
+      <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none">✕</button>
+      <div id="match-preview"></div>
+      <span style="flex:1;"></span>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;" title="4人卓に3人でも配席する">
+        <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
+        規定以下も配席
+      </label>
+      <button id="btn-undo" class="btn btn-monitor" title="元に戻す" style="padding:6px 10px;">↩</button>
     </div>
   </footer>
 </div>

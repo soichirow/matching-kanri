@@ -77,8 +77,8 @@ body {
 
 /* サイドバー */
 .player-panel {
-  width: 210px;
-  min-width: 140px;
+  width: 280px;
+  min-width: 180px;
   max-width: 480px;
   flex-shrink: 0;
   background: var(--surface);
@@ -2469,7 +2469,13 @@ document.addEventListener('DOMContentLoaded', () => {
     resizer.classList.remove('dragging')
     document.body.style.cursor    = ''
     document.body.style.userSelect = ''
+    // 幅を記憶
+    saveSettings({ ...getSettings(), panelWidth: panel.offsetWidth })
   })
+
+  // 保存済み幅を復元
+  const savedWidth = getSettings().panelWidth
+  if (savedWidth) panel.style.width = `${savedWidth}px`
 
   // ── テーマ切替 ──────────────────────────────────────────
   const applyTheme = theme => {

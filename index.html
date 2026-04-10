@@ -347,6 +347,7 @@ body {
 .dlg-box {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); width: 460px; max-width: 92vw;
+  max-height: 90vh;
   box-shadow: 0 20px 60px var(--shadow-strong);
   display: flex; flex-direction: column;
   animation: dlg-in .12s ease;
@@ -365,7 +366,7 @@ body {
 }
 .dlg-close-btn:hover { background: var(--surface2); color: var(--text); }
 
-.dlg-body { padding: 16px 18px; display:flex; flex-direction:column; gap:14px; }
+.dlg-body { padding: 16px 18px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; flex:1; min-height:0; }
 
 .dlg-field { display:flex; flex-direction:column; gap:6px; }
 .dlg-field label { font-size:12px; color:var(--text-dim); font-weight:600; letter-spacing:.04em; }

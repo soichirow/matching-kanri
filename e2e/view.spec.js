@@ -4,9 +4,10 @@ import { test, expect } from '@playwright/test'
 // 参加者ビューページ E2Eテスト
 // ════════════════════════════════════════════════════════
 
-test('IDなしでアクセスするとエラーメッセージ表示', async ({ page }) => {
+test('IDなしでアクセスするとコード入力画面が表示', async ({ page }) => {
   await page.goto('/view.html')
-  await expect(page.locator('.error-msg')).toContainText('大会IDが指定されていません')
+  await expect(page.locator('#code-input')).toBeVisible()
+  await expect(page.locator('#code-submit')).toBeVisible()
 })
 
 test('存在しないIDでアクセスするとエラー表示', async ({ page }) => {

@@ -2174,11 +2174,22 @@ document.addEventListener('DOMContentLoaded', () => {
                  <span style="font-size:13px;">自動同期</span>
                  <span id="dlg-share-status" style="font-size:11px;color:var(--text-dim);margin-left:auto;">${s.shareLastSync ? '最終: ' + new Date(s.shareLastSync).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
                </div>
-               <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;word-break:break-all;color:var(--accent2);" id="dlg-share-url">${location.origin + location.pathname.replace('index.html','') + 'view.html?id=' + s.shareId}</div>
-               <div style="display:flex;gap:6px;">
-                 <button type="button" class="btn btn-cancel-m" id="dlg-share-copy" style="flex:1;"><i data-lucide="clipboard-copy"></i> URLをコピー</button>
-                 <button type="button" class="btn btn-cancel-m" id="dlg-share-now" style="flex:1;"><i data-lucide="refresh-cw"></i> 今すぐ同期</button>
+               <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+                 <div style="flex:1;">
+                   <div style="font-size:11px;color:var(--text-dim);margin-bottom:2px;">参加コード</div>
+                   <div style="font-size:28px;font-weight:800;letter-spacing:0.15em;color:var(--accent);">${esc(s.shareCode || '')}</div>
+                 </div>
+                 <div style="text-align:right;">
+                   <div style="font-size:11px;color:var(--text-dim);margin-bottom:2px;">共有URL</div>
+                   <div style="font-size:11px;word-break:break-all;color:var(--accent2);" id="dlg-share-url">${location.origin + location.pathname.replace('index.html','') + 'view.html?id=' + s.shareId}</div>
+                 </div>
                </div>
+               <div style="display:flex;gap:6px;">
+                 <button type="button" class="btn btn-cancel-m" id="dlg-share-copy" style="flex:1;"><i data-lucide="clipboard-copy"></i> URLコピー</button>
+                 <button type="button" class="btn btn-cancel-m" id="dlg-share-qr" style="flex:1;"><i data-lucide="qr-code"></i> QRコード</button>
+                 <button type="button" class="btn btn-cancel-m" id="dlg-share-now" style="flex:1;"><i data-lucide="refresh-cw"></i> 同期</button>
+               </div>
+               <div id="dlg-qr-area" style="display:none;text-align:center;padding:8px;background:white;border-radius:8px;"></div>
                <button type="button" class="btn btn-cancel-m" id="dlg-share-stop" style="text-align:left;color:var(--danger);"><i data-lucide="x"></i> 共有を停止</button>
              </div>`
            : `<button type="button" class="btn btn-ok-add" id="dlg-share-start" style="text-align:left;"><i data-lucide="share-2"></i> 大会を共有する</button>`
@@ -2247,9 +2258,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('#dlg-share-start')) {
       (async () => {
         const adminKey = crypto.randomUUID()
-        const { data: newId, error } = await _supabase.rpc('create_tournament', { p_data: _buildShareData(), p_admin_key: adminKey })
+        const { data: result, error } = await _supabase.rpc('create_tournament', { p_data: _buildShareData(), p_admin_key: adminKey })
         if (error) { toast('共有の開始に失敗しました'); console.error(error); return }
-        saveSettings({ ...getSettings(), shareId: newId, shareAdminKey: adminKey, shareSync: true, shareLastSync: Date.now() })
+        saveSettings({ ...getSettings(), shareId: result.id, shareCode: result.short_code, shareAdminKey: adminKey, shareSync: true, shareLastSync: Date.now() })
         _closeDlg(null)
         toast('大会を共有しました！')
         render()
@@ -2260,6 +2271,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('#dlg-share-copy')) {
       const url = document.getElementById('dlg-share-url')?.textContent
       if (url) navigator.clipboard.writeText(url).then(() => toast('URLをコピーしました'))
+      return
+    }
+    if (e.target.closest('#dlg-share-qr')) {
+      const area = document.getElementById('dlg-qr-area')
+      if (!area) return
+      if (area.style.display !== 'none') { area.style.display = 'none'; return }
+      const url = document.getElementById('dlg-share-url')?.textContent
+      if (!url) return
+      // QRコード生成（軽量SVG QR）
+      area.innerHTML = '<div style="padding:12px;color:var(--text-dim);font-size:12px;">読み込み中...</div>'
+      area.style.display = 'block'
+      import('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/+esm').then(mod => {
+        const qr = mod.default(0, 'M')
+        qr.addData(url)
+        qr.make()
+        area.innerHTML = qr.createSvgTag({ scalable: true, cellSize: 4, margin: 2 })
+        area.querySelector('svg').style.width = '200px'
+        area.querySelector('svg').style.height = '200px'
+      }).catch(() => {
+        area.innerHTML = '<div style="padding:12px;color:var(--danger);font-size:12px;">QRコード生成に失敗しました</div>'
+      })
       return
     }
     if (e.target.closest('#dlg-share-now')) {

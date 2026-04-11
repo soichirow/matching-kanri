@@ -286,11 +286,64 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 // ── 大会ID取得 ─────────────────────────────
 const params = new URLSearchParams(location.search)
-const tournamentId = params.get('id')
+let tournamentId = params.get('id')
+const codeParam = params.get('code')
 
-if (!tournamentId) {
-  document.querySelector('.content').innerHTML = '<div class="error-msg">大会IDが指定されていません。<br>管理者から共有されたURLでアクセスしてください。</div>'
+// コードからID解決
+const resolveCode = async (code) => {
+  const normalized = code.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toUpperCase().trim()
+  const { data, error } = await supabase.rpc('find_tournament_by_code', { p_code: normalized })
+  if (error || !data) return null
+  return data
+}
+
+if (!tournamentId && codeParam) {
+  // codeパラメータからID解決
+  document.querySelector('.content').innerHTML = '<div class="loading"><div class="loading-spinner"></div>大会を検索中...</div>'
+  resolveCode(codeParam).then(id => {
+    if (id) {
+      location.replace(location.pathname + '?id=' + id)
+    } else {
+      document.querySelector('.content').innerHTML = '<div class="error-msg">コード「' + esc(codeParam) + '」に一致する大会が見つかりません。</div>'
+    }
+  })
+} else if (!tournamentId) {
   document.querySelector('.tabs').style.display = 'none'
+  document.querySelector('.content').innerHTML = `
+    <div style="text-align:center;padding:40px 20px;">
+      <p style="color:var(--text-dim);font-size:14px;margin-bottom:16px;">参加コードを入力してください</p>
+      <input type="text" id="code-input" placeholder="例: A1B2" maxlength="6"
+        style="font-size:32px;font-weight:800;letter-spacing:0.2em;text-align:center;width:180px;padding:12px;
+        background:var(--surface);border:2px solid var(--border);border-radius:12px;color:var(--accent);
+        text-transform:uppercase;outline:none;" autocomplete="off" inputmode="text">
+      <br>
+      <button id="code-submit" style="margin-top:12px;padding:10px 24px;font-size:15px;font-weight:700;
+        background:var(--accent);color:white;border:none;border-radius:10px;cursor:pointer;">参加する</button>
+      <p id="code-error" style="color:var(--danger);font-size:13px;margin-top:12px;display:none;"></p>
+    </div>`
+  setTimeout(() => {
+    const inp = document.getElementById('code-input')
+    const btn = document.getElementById('code-submit')
+    const err = document.getElementById('code-error')
+    inp?.focus()
+    inp?.addEventListener('keydown', e => { if (e.key === 'Enter') btn?.click() })
+    btn?.addEventListener('click', async () => {
+      const code = inp?.value?.trim()
+      if (!code) return
+      btn.disabled = true
+      btn.textContent = '検索中...'
+      err.style.display = 'none'
+      const id = await resolveCode(code)
+      if (id) {
+        location.replace(location.pathname + '?id=' + id)
+      } else {
+        err.textContent = 'コードに一致する大会が見つかりません'
+        err.style.display = 'block'
+        btn.disabled = false
+        btn.textContent = '参加する'
+      }
+    })
+  }, 50)
 }
 
 // ── 状態 ───────────────────────────────────

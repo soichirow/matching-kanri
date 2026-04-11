@@ -142,7 +142,7 @@ select cron.schedule('cleanup-old-tournaments', '0 19 * * *', 'SELECT cleanup_ol
 
 ### 3.4 Update Configuration in Code
 
-Replace the following values in `index.html` and `view.html` with your own project's values:
+Replace the following values in `admin.html` and `view.html` with your own project's values:
 
 ```javascript
 const SUPABASE_URL = 'https://your-project.supabase.co'

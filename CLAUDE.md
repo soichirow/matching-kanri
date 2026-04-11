@@ -6,7 +6,7 @@
 
 カードゲームイベントのマッチング管理Webアプリ。フレームワーク不使用のVanilla JS単一ファイル構成。
 
-- **管理画面**: `index.html` — 主催者がプレイヤー/テーブル管理、マッチング操作
+- **管理画面**: `admin.html` — 主催者がプレイヤー/テーブル管理、マッチング操作
 - **参加者ビュー**: `view.html` — 参加者がスマホで座席・順位・履歴を閲覧
 - **バックエンド**: Supabase（PostgreSQL + Realtime）— イベント共有用
 - **ホスティング**: GitHub Pages（静的配信）
@@ -14,7 +14,7 @@
 ## アーキテクチャ
 
 ```
-index.html (管理画面)
+admin.html (管理画面)
 ├── CSS: インラインstyle要素（CSS変数ベースのダーク/ライトテーマ）
 ├── HTML: 静的構造 + テンプレートリテラルによる動的レンダリング
 └── JS: インラインscript要素
@@ -34,7 +34,7 @@ view.html (参加者ビュー)
 ## 重要な設計判断
 
 ### 単一ファイル構成
-`index.html`と`view.html`はそれぞれ1ファイルで完結。CSS/JS/HTMLすべてインライン。これはGitHub Pagesでビルドなしにデプロイするための意図的な設計。`src/`内のファイルはテスト用の参照実装であり、実際の動作には使用されない。
+`admin.html`と`view.html`はそれぞれ1ファイルで完結。CSS/JS/HTMLすべてインライン。これはGitHub Pagesでビルドなしにデプロイするための意図的な設計。`src/`内のファイルはテスト用の参照実装であり、実際の動作には使用されない。
 
 ### データフロー
 - 管理画面: localStorage → render() → 画面更新 + _syncDebounce() → Supabase
@@ -74,7 +74,7 @@ npx eslint . --ext .js  # リンター
 
 ## Supabase
 
-- URL/Key: `index.html`と`view.html`内にハードコード（anon key、公開可）
+- URL/Key: `admin.html`と`view.html`内にハードコード（anon key、公開可）
 - テーブル: `tournaments` (id, data[JSONB], admin_key, short_code, created_at, updated_at)
 - RPC関数: `create_tournament`, `update_tournament`, `delete_tournament`, `find_tournament_by_code`, `cleanup_old_tournaments`
 - pg_cron: 毎日UTC 19:00(JST 4:00)に14日以上前のデータを自動削除

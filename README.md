@@ -20,7 +20,7 @@
 
 | 画面 | URL | 用途 |
 |------|-----|------|
-| 管理画面 | `index.html` | 主催者がプレイヤー/テーブル管理、マッチング操作 |
+| 管理画面 | `admin.html` | 主催者がプレイヤー/テーブル管理、マッチング操作 |
 | 参加者ビュー | `view.html` | 参加者がスマホで座席・順位表・対戦履歴を閲覧 |
 
 ---
@@ -94,7 +94,7 @@
 ## 技術構成
 
 ```
-管理画面 (index.html)  ← GitHub Pages で配信
+管理画面 (admin.html)  ← GitHub Pages で配信
     ↓ Supabase JS SDK
 Supabase (PostgreSQL)  ← データ共有・リアルタイム同期
     ↑ REST API
@@ -104,7 +104,7 @@ Supabase (PostgreSQL)  ← データ共有・リアルタイム同期
 ### ファイル構成
 
 ```
-index.html              管理画面（単一ファイル）
+admin.html              管理画面（単一ファイル）
 view.html               参加者ビューページ
 src/
   store.js              localStorage CRUD（テスト用参照実装）

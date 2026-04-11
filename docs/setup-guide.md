@@ -142,7 +142,7 @@ select cron.schedule('cleanup-old-tournaments', '0 19 * * *', 'SELECT cleanup_ol
 
 ### 3.4 コード内の設定を変更
 
-`index.html` と `view.html` 内の以下の値を自分のプロジェクトの値に変更:
+`admin.html` と `view.html` 内の以下の値を自分のプロジェクトの値に変更:
 
 ```javascript
 const SUPABASE_URL = 'https://あなたのプロジェクト.supabase.co'

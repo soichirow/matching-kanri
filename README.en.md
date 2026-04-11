@@ -18,7 +18,7 @@ No server required. No installation needed. Runs entirely in the browser.
 
 | Screen | URL | Purpose |
 |--------|-----|---------|
-| Admin | `index.html` | Host manages players, tables, and matchmaking |
+| Admin | `admin.html` | Host manages players, tables, and matchmaking |
 | Participant View | `view.html` | Participants check seating, standings, and match history on mobile |
 
 ---
@@ -92,7 +92,7 @@ No server required. No installation needed. Runs entirely in the browser.
 ## Tech Stack
 
 ```
-Admin (index.html)      ← Served via GitHub Pages
+Admin (admin.html)      ← Served via GitHub Pages
     ↓ Supabase JS SDK
 Supabase (PostgreSQL)   ← Data sharing & real-time sync
     ↑ REST API
@@ -102,7 +102,7 @@ Participant (view.html) ← Served via GitHub Pages
 ### File Structure
 
 ```
-index.html              Admin screen (single file)
+admin.html              Admin screen (single file)
 view.html               Participant view page
 src/
   store.js              localStorage CRUD (test reference)

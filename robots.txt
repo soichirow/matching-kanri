@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://soichirow.github.io/matching-kanri/sitemap.xml

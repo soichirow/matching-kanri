@@ -110,7 +110,7 @@ src/
   store.js              localStorage CRUD (test reference)
   matching.js           Matching algorithm
   layout.js             Drag & drop
-tests/                  Unit tests (72 cases)
+tests/                  Unit tests (106 cases)
 e2e/                    E2E tests (30 cases)
 gas-backup/             GAS backup script
 docs/                   Documentation
@@ -132,9 +132,9 @@ docs/                   Documentation
 ```bash
 npm install             # Install dependencies
 npx vite                # Dev server
-npx vitest run          # Unit tests (72 cases)
+npx vitest run          # Unit tests (106 cases)
 npx playwright test     # E2E tests (30 cases)
-npx eslint . --ext .js  # Linter
+npx eslint .            # Linter
 ```
 
 ---

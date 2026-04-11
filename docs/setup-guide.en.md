@@ -180,9 +180,9 @@ All event data will be backed up to a Google Spreadsheet daily at 3:30 AM JST.
 
 ```bash
 npx vite                # Start the dev server
-npx vitest run          # Unit tests (72 tests)
+npx vitest run          # Unit tests (106 tests)
 npx playwright test     # E2E tests (30 tests)
-npx eslint . --ext .js  # Linter
+npx eslint .            # Linter
 ```
 
 ---

@@ -11,6 +11,7 @@ export default [
       globals: {
         localStorage: 'readonly',
         document:     'readonly',
+        window:       'readonly',
         MouseEvent:   'readonly',
       },
     },

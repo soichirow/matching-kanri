@@ -59,7 +59,7 @@ create table tournaments (
 alter table tournaments enable row level security;
 create policy "anyone can read" on tournaments for select using (true);
 create policy "anyone can insert" on tournaments for insert with check (true);
-create policy "anyone can update" on tournaments for update using (true);
+-- UPDATE/DELETEポリシーなし（anonからの直接変更禁止。変更はRPC経由のみ）
 
 -- カラムレベルセキュリティ（admin_keyを非公開に）
 revoke all on tournaments from anon, authenticated;
@@ -70,9 +70,13 @@ grant insert (data, admin_key) on tournaments to anon;
 create or replace function create_tournament(p_data jsonb, p_admin_key text)
 returns jsonb as $$
 declare new_id text; new_code text; attempts int := 0;
+  chars text := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 begin
   loop
-    new_code := upper(substr(md5(random()::text), 1, 4));
+    new_code := '';
+    for i in 1..4 loop
+      new_code := new_code || substr(chars, floor(random() * 36 + 1)::int, 1);
+    end loop;
     begin
       insert into tournaments (data, admin_key, short_code)
       values (p_data, p_admin_key, new_code) returning id into new_id;
@@ -80,7 +84,10 @@ begin
     exception when unique_violation then
       attempts := attempts + 1;
       if attempts > 10 then
-        new_code := upper(substr(md5(random()::text), 1, 6));
+        new_code := '';
+        for i in 1..6 loop
+          new_code := new_code || substr(chars, floor(random() * 36 + 1)::int, 1);
+        end loop;
         insert into tournaments (data, admin_key, short_code)
         values (p_data, p_admin_key, new_code) returning id into new_id;
         return jsonb_build_object('id', new_id, 'short_code', new_code);
@@ -105,6 +112,7 @@ create or replace function delete_tournament(p_id text, p_admin_key text)
 returns void as $$
 begin
   delete from tournaments where id = p_id and admin_key = p_admin_key;
+  if not found then raise exception 'Unauthorized or not found'; end if;
 end;
 $$ language plpgsql security definer;
 
@@ -130,6 +138,15 @@ begin
   return deleted_count;
 end;
 $$ language plpgsql security definer;
+
+-- updated_at 自動更新トリガー
+create or replace function update_updated_at()
+returns trigger as $$
+begin new.updated_at = now(); return new; end;
+$$ language plpgsql;
+
+create trigger trg_updated_at before update on tournaments
+for each row execute function update_updated_at();
 
 -- 毎日AM4:00(JST) = UTC 19:00 に実行
 select cron.schedule('cleanup-old-tournaments', '0 19 * * *', 'SELECT cleanup_old_tournaments()');
@@ -180,9 +197,9 @@ clasp push --force
 
 ```bash
 npx vite                # 開発サーバー起動
-npx vitest run          # 単体テスト (72件)
+npx vitest run          # 単体テスト (106件)
 npx playwright test     # E2Eテスト (30件)
-npx eslint . --ext .js  # リンター
+npx eslint .            # リンター
 ```
 
 ---

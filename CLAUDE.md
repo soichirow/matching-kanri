@@ -35,7 +35,7 @@ view.html (参加者ビュー)
 ## 重要な設計判断
 
 ### 単一ファイル構成
-`admin.html`と`view.html`はそれぞれ1ファイルで完結。CSS/JS/HTMLすべてインライン。これはGitHub Pagesでビルドなしにデプロイするための意図的な設計。`src/`内のファイルはテスト用の参照実装であり、実際の動作には使用されない。
+`admin.html`と`view.html`はそれぞれ1ファイルで完結。CSS/JS/HTMLすべてインライン。これはGitHub Pagesでビルドなしにデプロイするための意図的な設計。`src/`内のファイルはインラインコードと同期されたテスト用モジュールであり、vitestから参照される。実際のブラウザ動作には使用されない。
 
 ### データフロー
 - 管理画面: localStorage → render() → 画面更新 + _syncDebounce() → Supabase
@@ -59,9 +59,9 @@ view.html (参加者ビュー)
 
 ```bash
 npx vite                # 開発サーバー
-npx vitest run          # 単体テスト (72件)
+npx vitest run          # 単体テスト (106件)
 npx playwright test     # E2Eテスト (30件)
-npx eslint . --ext .js  # リンター
+npx eslint .            # リンター
 ```
 
 ## テスト構成

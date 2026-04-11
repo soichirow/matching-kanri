@@ -4,9 +4,9 @@
 
 | レイヤー | ツール | ファイル | 対象 |
 |---------|--------|---------|------|
-| Unit | vitest + jsdom | `tests/store.test.js` | データ永続化層 (22件) |
-| Unit | vitest | `tests/matching.test.js` | マッチングアルゴリズム (40件) |
-| Unit | vitest + jsdom | `tests/layout.test.js` | ドラッグ・座標管理 (10件) |
+| Unit | vitest + jsdom | `tests/store.test.js` | データ永続化層 (38件) |
+| Unit | vitest | `tests/matching.test.js` | マッチングアルゴリズム (52件) |
+| Unit | vitest + jsdom | `tests/layout.test.js` | ドラッグ・座標管理 (16件) |
 | E2E | Playwright | `e2e/app.spec.js` | 管理画面UI統合 (19件) |
 | E2E | Playwright | `e2e/share.spec.js` | イベント共有機能 (3件) |
 | E2E | Playwright | `e2e/view.spec.js` | 参加者ビュー (8件) |
@@ -14,12 +14,12 @@
 ## 実行方法
 
 ```bash
-npx vitest run          # 単体テスト 72件
+npx vitest run          # 単体テスト 106件
 npx playwright test     # E2Eテスト 30件
-npx eslint . --ext .js  # リンター
+npx eslint .            # リンター
 ```
 
-## Unit: store.test.js (22件)
+## Unit: store.test.js (38件)
 
 ### Players CRUD
 - 追加でid/name/group/status設定、group省略→null、空文字→null
@@ -37,7 +37,7 @@ npx eslint . --ext .js  # リンター
 - スコア記録・上書き・null戻し
 - 全クリア（プレイヤー・テーブルに影響なし）
 
-## Unit: matching.test.js (40件)
+## Unit: matching.test.js (52件)
 
 ### pairPenalty
 - 履歴なし→0、同グループ→+5、対戦n回→n×10
@@ -54,7 +54,7 @@ npx eslint . --ext .js  # リンター
 ### optimizeTableAssignment
 - 席移動最小化、8卓(全順列)、9卓以上(貪欲法)
 
-## Unit: layout.test.js (10件)
+## Unit: layout.test.js (16件)
 
 - マウスドラッグ、draggingクラス、.no-drag無効、destroy()
 

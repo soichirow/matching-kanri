@@ -15,7 +15,7 @@
 1. フォークしてブランチを作成
 2. 変更を加える
 3. テストが通ることを確認: `npx vitest run && npx playwright test`
-4. ESLintが通ることを確認: `npx eslint . --ext .js`
+4. ESLintが通ることを確認: `npx eslint .`
 5. プルリクエストを作成
 
 ### コードスタイル
@@ -35,6 +35,7 @@ test: テストの追加・修正
 refactor: リファクタリング
 cleanup: 不要コードの削除
 security: セキュリティ関連の修正
+chore: ビルド・依存関係・設定の変更
 ```
 
 ## ライセンス

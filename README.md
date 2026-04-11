@@ -113,13 +113,13 @@ src/
   matching.js           マッチングアルゴリズム
   layout.js             ドラッグ&ドロップ
 tests/
-  store.test.js         データ永続化テスト (22件)
-  matching.test.js      マッチングアルゴリズムテスト (40件)
-  layout.test.js        レイアウトテスト (10件)
+  store.test.js         データ永続化テスト (38件)
+  matching.test.js      マッチングアルゴリズムテスト (52件)
+  layout.test.js        レイアウトテスト (16件)
 e2e/
-  app.spec.js           管理画面E2Eテスト (15件)
+  app.spec.js           管理画面E2Eテスト (19件)
   share.spec.js         イベント共有E2Eテスト (3件)
-  view.spec.js          参加者ビューE2Eテスト (5件)
+  view.spec.js          参加者ビューE2Eテスト (8件)
 gas-backup/
   Code.gs               GASバックアップスクリプト
   appsscript.json       GAS設定
@@ -141,9 +141,9 @@ gas-backup/
 ```bash
 npm install             # 依存インストール
 npx vite                # 開発サーバー
-npx vitest run          # 単体テスト (72件)
+npx vitest run          # 単体テスト (106件)
 npx playwright test     # E2Eテスト (30件)
-npx eslint . --ext .js  # リンター
+npx eslint .            # リンター
 ```
 
 ### Supabase DB スキーマ

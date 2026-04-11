@@ -1,6 +1,8 @@
 node_modules/
 coverage/
 test-results/
+playwright-report/
+supabase/.temp/
 .DS_Store
 Thumbs.db
 *.log

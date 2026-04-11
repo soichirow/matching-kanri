@@ -179,6 +179,8 @@ RPC関数: `create_tournament`, `update_tournament`, `delete_tournament`, `find_
 - [ほしいものリスト (Amazon)](https://www.amazon.jp/hz/wishlist/ls/1Z0X9ZM1D65A7?ref_=wl_share)
 - [Amazon で支援](https://amzn.to/4dB8wlz)
 
+> Amazonのアソシエイトとして、本プロジェクトの運営者は適格販売により収入を得ています。
+
 ---
 
 ## ライセンス

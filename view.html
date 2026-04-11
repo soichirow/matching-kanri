@@ -467,10 +467,24 @@ const render = () => {
   const tName = tournamentData.settings?.tournamentName
   document.getElementById('header-title').textContent = tName || 'イベント情報'
   document.title = tName || 'イベント情報'
+  // 順位表タブの表示/非表示（点数記録ONの場合のみ表示）
+  const vpEnabled = !!tournamentData.settings?.enableVP
+  const standingsTab = document.querySelector('.tab[data-tab="standings"]')
+  if (standingsTab) standingsTab.style.display = vpEnabled ? '' : 'none'
+  // 順位表タブが非表示で選択中なら、テーブルタブに切り替え
+  if (!vpEnabled && standingsTab?.classList.contains('active')) {
+    standingsTab.classList.remove('active')
+    standingsTab.setAttribute('aria-selected', 'false')
+    document.getElementById('panel-standings').classList.remove('active')
+    const tablesTab = document.querySelector('.tab[data-tab="tables"]')
+    tablesTab?.classList.add('active')
+    tablesTab?.setAttribute('aria-selected', 'true')
+    document.getElementById('panel-tables').classList.add('active')
+  }
   // 座席バナー
   renderSeatBanner()
   renderTables()
-  renderStandings()
+  if (vpEnabled) renderStandings()
   renderHistory()
 }
 

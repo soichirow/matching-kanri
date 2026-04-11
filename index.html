@@ -934,7 +934,7 @@ const updateRoomObject  = (id, updates) => {
 const deleteRoomObject  = id => _save('mg_objects', getRoomObjects().filter(o => o.id !== id))
 
 // ════════════════════════════════════════════════════════
-// Supabase — 大会共有・同期
+// Supabase — イベント共有・同期
 // ════════════════════════════════════════════════════════
 
 const SUPABASE_URL = 'https://ufmjvdytyldpqlhgxzfm.supabase.co'
@@ -2108,8 +2108,8 @@ document.addEventListener('DOMContentLoaded', () => {
       '設定',
       `<!-- ━━ 基本 ━━ -->
        <div class="dlg-field">
-         <label>大会名</label>
-         <input type="text" id="dlg-tournament-name" value="${esc(s.tournamentName || '')}" placeholder="例：第5回カードバトル大会">
+         <label>イベント名</label>
+         <input type="text" id="dlg-tournament-name" value="${esc(s.tournamentName || '')}" placeholder="例：第5回カードゲーム交流会">
        </div>
        <div class="dlg-field" style="display:flex;align-items:center;gap:12px;">
          <label style="margin:0;">テーマ</label>
@@ -2119,10 +2119,10 @@ document.addEventListener('DOMContentLoaded', () => {
          </div>
        </div>
 
-       <!-- ━━ 大会共有 ━━ -->
+       <!-- ━━ イベント共有 ━━ -->
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
-         <label style="color:var(--accent2);font-size:13px;">大会共有</label>
+         <label style="color:var(--accent2);font-size:13px;">イベント共有</label>
          ${s.shareId
            ? `<div style="display:flex;flex-direction:column;gap:8px;">
                <div style="display:flex;align-items:center;gap:6px;">
@@ -2149,7 +2149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                <button type="button" class="btn btn-cancel-m" id="dlg-share-stop" style="text-align:left;color:var(--danger);font-size:11px;"><i data-lucide="x"></i> 共有を停止</button>
              </div>`
            : `<p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">参加者にテーブル配席や順位表をスマホで共有できます。</p>
-              <button type="button" class="btn btn-ok-add" id="dlg-share-start" style="text-align:left;"><i data-lucide="share-2"></i> 大会を共有する</button>`
+              <button type="button" class="btn btn-ok-add" id="dlg-share-start" style="text-align:left;"><i data-lucide="share-2"></i> イベントを共有する</button>`
          }
        </div>
 
@@ -2208,7 +2208,7 @@ document.addEventListener('DOMContentLoaded', () => {
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
          <div style="display:flex;flex-direction:column;gap:6px;">
-           <button type="button" class="btn btn-ok-add" id="dlg-new-tournament" style="text-align:left;"><i data-lucide="rotate-ccw"></i> 新しい大会を始める</button>
+           <button type="button" class="btn btn-ok-add" id="dlg-new-tournament" style="text-align:left;"><i data-lucide="rotate-ccw"></i> 新しいイベントを始める</button>
            <button type="button" class="btn btn-cancel-m" id="dlg-clear-matches" style="text-align:left;">
              <i data-lucide="trash-2"></i> 対戦履歴をクリア
            </button>
@@ -2250,7 +2250,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   document.getElementById('dlg-body').addEventListener('click', e => {
-    // ── 大会共有ボタン ──
+    // ── イベント共有ボタン ──
     if (e.target.closest('#dlg-share-start')) {
       (async () => {
         const adminKey = crypto.randomUUID()
@@ -2258,7 +2258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error) { toast('共有の開始に失敗しました'); console.error(error); return }
         saveSettings({ ...getSettings(), shareId: result.id, shareCode: result.short_code, shareAdminKey: adminKey, shareSync: true, shareLastSync: Date.now() })
         _closeDlg(null)
-        toast('大会を共有しました！')
+        toast('イベントを共有しました！')
         render()
         setTimeout(dlgSettings, 200)
       })()
@@ -2305,7 +2305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('#dlg-share-stop')) {
       _closeDlg(null)
       setTimeout(() => {
-        dlgConfirm('大会の共有を停止しますか？<br><small>参加者はURLにアクセスできなくなります。</small>', '停止', 'btn-del').then(ok => {
+        dlgConfirm('イベントの共有を停止しますか？<br><small>参加者はURLにアクセスできなくなります。</small>', '停止', 'btn-del').then(ok => {
           if (!ok) return
           const s = getSettings()
           if (s.shareId && s.shareAdminKey) {
@@ -2321,7 +2321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('#dlg-new-tournament')) {
       _closeDlg(null)
       setTimeout(() => {
-        dlgConfirm('新しい大会を始めますか？<br><small>プレイヤーと対戦履歴がリセットされます。テーブル配置は維持されます。</small>', '開始', 'btn-ok-add').then(ok => {
+        dlgConfirm('新しいイベントを始めますか？<br><small>プレイヤーと対戦履歴がリセットされます。テーブル配置は維持されます。</small>', '開始', 'btn-ok-add').then(ok => {
           if (!ok) return
           localStorage.removeItem('mg_players')
           clearMatches()
@@ -2332,7 +2332,7 @@ document.addEventListener('DOMContentLoaded', () => {
           getTables().forEach(t => updateTable(t.id, { status: 'empty', playerIds: [] }))
           saveSettings({ ...getSettings(), shareId: null, shareAdminKey: null, shareSync: false, shareLastSync: null })
           render()
-          toast('新しい大会を開始しました')
+          toast('新しいイベントを開始しました')
         })
       }, 100)
       return

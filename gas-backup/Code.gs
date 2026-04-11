@@ -1,7 +1,7 @@
 /**
- * マッチング管理 — 大会データバックアップ
+ * マッチング管理 — イベントデータバックアップ
  *
- * Supabase上の全大会データをこのスプレッドシートにバックアップします。
+ * Supabase上の全イベントデータをこのスプレッドシートにバックアップします。
  * 毎日AM3:30(JST)に自動実行（pg_cronの削除がAM4:00なので、その前に実行）。
  */
 
@@ -9,7 +9,7 @@ const SUPABASE_URL = 'https://ufmjvdytyldpqlhgxzfm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BR3vLJ4Vlfm1QmGqa-kY6Q_Q7jkXcS1';
 
 /**
- * Supabaseから全大会データを取得
+ * Supabaseから全イベントデータを取得
  */
 function fetchAllTournaments() {
   const url = SUPABASE_URL + '/rest/v1/tournaments?select=id,data,created_at,updated_at&order=created_at.desc';
@@ -30,12 +30,12 @@ function fetchAllTournaments() {
 }
 
 /**
- * メイン: 全大会データをシートにバックアップ
+ * メイン: 全イベントデータをシートにバックアップ
  */
 function backupTournaments() {
   const tournaments = fetchAllTournaments();
   if (!tournaments.length) {
-    Logger.log('バックアップ対象の大会がありません');
+    Logger.log('バックアップ対象のイベントがありません');
     return;
   }
 
@@ -43,7 +43,7 @@ function backupTournaments() {
   let sheet = ss.getSheetByName('バックアップログ');
   if (!sheet) {
     sheet = ss.insertSheet('バックアップログ');
-    sheet.appendRow(['バックアップ日時', '大会数', 'ステータス']);
+    sheet.appendRow(['バックアップ日時', 'イベント数', 'ステータス']);
     sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
   }
 
@@ -56,7 +56,7 @@ function backupTournaments() {
     const matches = data.matches || [];
     const sheetName = 'T_' + t.id.substring(0, 8);
 
-    // 大会ごとのシートを作成/更新
+    // イベントごとのシートを作成/更新
     let tSheet = ss.getSheetByName(sheetName);
     if (!tSheet) {
       tSheet = ss.insertSheet(sheetName);
@@ -65,7 +65,7 @@ function backupTournaments() {
     }
 
     // ヘッダー情報
-    tSheet.getRange('A1').setValue('大会ID');
+    tSheet.getRange('A1').setValue('イベントID');
     tSheet.getRange('B1').setValue(t.id);
     tSheet.getRange('A2').setValue('作成日時');
     tSheet.getRange('B2').setValue(t.created_at);
@@ -145,7 +145,7 @@ function backupTournaments() {
 
   // ログ記録
   sheet.appendRow([new Date().toISOString(), backedUp, '成功']);
-  Logger.log(backedUp + '件の大会をバックアップしました');
+  Logger.log(backedUp + '件のイベントをバックアップしました');
 }
 
 /**

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 // ════════════════════════════════════════════════════════
-// 大会共有機能 E2Eテスト
+// イベント共有機能 E2Eテスト
 // ════════════════════════════════════════════════════════
 
 test.beforeEach(async ({ page }) => {
@@ -11,15 +11,15 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector('#app')
 })
 
-test('設定画面に大会共有セクションが表示される', async ({ page }) => {
+test('設定画面にイベント共有セクションが表示される', async ({ page }) => {
   await page.click('#btn-settings')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
-  await expect(page.locator('#dlg-body')).toContainText('大会共有')
+  await expect(page.locator('#dlg-body')).toContainText('イベント共有')
   await expect(page.locator('#dlg-share-start')).toBeVisible()
   await page.click('#dlg-cancel')
 })
 
-test('大会共有ボタンで大会IDが発行される', async ({ page }) => {
+test('イベント共有ボタンでイベントIDが発行される', async ({ page }) => {
   // プレイヤー追加
   await page.selectOption('#quick-add-count', '4')
   await page.click('#btn-quick-add')
@@ -27,7 +27,7 @@ test('大会共有ボタンで大会IDが発行される', async ({ page }) => {
   await page.click('#dlg-ok')
   await expect(page.locator('.player-item')).toHaveCount(4)
 
-  // 設定→大会共有
+  // 設定→イベント共有
   await page.click('#btn-settings')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
   await page.click('#dlg-share-start')
@@ -53,7 +53,7 @@ test('共有後のview.htmlにデータが表示される', async ({ page, conte
   await page.click('#dlg-ok')
   await expect(page.locator('.player-item')).toHaveCount(4)
 
-  // 設定→大会共有→自動再オープンを待つ
+  // 設定→イベント共有→自動再オープンを待つ
   await page.click('#btn-settings')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
   await page.click('#dlg-share-start')

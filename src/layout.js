@@ -1,80 +1,71 @@
 /**
  * layout.js — テーブルカードのドラッグ&ドロップ位置管理
  *
- * 注意: admin.html のインラインJS版は以下の追加機能を含む:
+ * admin.html のインラインJS版と同期:
  *   - グリッドスナップ (snap関数, SNAP_GRID=28px)
  *   - スマホ判定 (isMobile) でタッチドラッグ無効化
  *   - onMove はドラッグ終了時のみ呼ばれる（スナップ後の座標で）
- * このファイルはテスト用の参照実装として維持。
  */
+
+export const SNAP_GRID = 28
+export const snap = v => Math.round(v / SNAP_GRID) * SNAP_GRID
+export const isMobile = () => window.innerWidth <= 768
 
 /**
  * 要素にドラッグ機能を付与する
  * .no-drag クラスを持つ子要素からはドラッグを開始しない
  *
  * @param {HTMLElement} el
- * @param {(x: number, y: number) => void} onMove  移動後コールバック
+ * @param {(x: number, y: number) => void} onMove  移動後コールバック（end時のみ）
  * @returns {{ destroy: () => void }}
  */
 export function enableDrag(el, onMove) {
-  let startMouseX, startMouseY, startLeft, startTop, dragging = false
+  let startMX, startMY, startL, startT, dragging = false
+
+  const startDrag = (cx, cy) => {
+    dragging = true
+    startMX = cx; startMY = cy
+    startL = parseInt(el.style.left) || 0
+    startT = parseInt(el.style.top)  || 0
+    el.classList.add('dragging')
+  }
+  const move = (cx, cy) => {
+    const x = Math.max(0, startL + cx - startMX)
+    const y = Math.max(0, startT + cy - startMY)
+    el.style.left = `${x}px`
+    el.style.top  = `${y}px`
+  }
+  const end = () => {
+    dragging = false
+    el.classList.remove('dragging')
+    // グリッドにスナップ
+    const sx = snap(Math.max(0, parseInt(el.style.left) || 0))
+    const sy = snap(Math.max(0, parseInt(el.style.top)  || 0))
+    el.style.left = `${sx}px`
+    el.style.top  = `${sy}px`
+    onMove?.(sx, sy)
+  }
+
+  const onMM = e => { if (dragging) move(e.clientX, e.clientY) }
+  const onMU = () => { end(); document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU) }
+  const onTM = e => { if (!dragging) return; e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY) }
+  const onTE = () => { end(); document.removeEventListener('touchmove', onTM); document.removeEventListener('touchend', onTE) }
 
   function onMouseDown(e) {
     if (e.target.closest('.no-drag')) return
     e.preventDefault()
     startDrag(e.clientX, e.clientY)
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('mousemove', onMM)
+    document.addEventListener('mouseup', onMU)
   }
 
   function onTouchStart(e) {
+    if (isMobile()) return  // スマホではドラッグ無効、通常スクロールを許可
     if (e.target.closest('.no-drag')) return
     e.preventDefault()
-    const t = e.touches[0]
-    startDrag(t.clientX, t.clientY)
-    document.addEventListener('touchmove', onTouchMove, { passive: false })
-    document.addEventListener('touchend', onTouchEnd)
-  }
-
-  function startDrag(cx, cy) {
-    dragging = true
-    startMouseX = cx
-    startMouseY = cy
-    startLeft = parseInt(el.style.left) || 0
-    startTop  = parseInt(el.style.top)  || 0
-    el.classList.add('dragging')
-  }
-
-  function onMouseMove(e) { if (dragging) move(e.clientX, e.clientY) }
-  function onTouchMove(e) {
-    if (!dragging) return
-    e.preventDefault()
-    move(e.touches[0].clientX, e.touches[0].clientY)
-  }
-
-  function move(cx, cy) {
-    const x = Math.max(0, startLeft + cx - startMouseX)
-    const y = Math.max(0, startTop  + cy - startMouseY)
-    el.style.left = x + 'px'
-    el.style.top  = y + 'px'
-    if (onMove) onMove(x, y)
-  }
-
-  function onMouseUp() {
-    end()
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
-  }
-
-  function onTouchEnd() {
-    end()
-    document.removeEventListener('touchmove', onTouchMove)
-    document.removeEventListener('touchend', onTouchEnd)
-  }
-
-  function end() {
-    dragging = false
-    el.classList.remove('dragging')
+    startDrag(e.touches[0].clientX, e.touches[0].clientY)
+    document.addEventListener('touchmove', onTM, { passive: false })
+    document.addEventListener('touchend', onTE)
   }
 
   el.addEventListener('mousedown', onMouseDown)

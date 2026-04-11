@@ -13,16 +13,26 @@ const KEYS = {
   MATCHES: 'mg_matches',
 }
 
+const _memCache = {}
+
+export function _clearCache() {
+  Object.keys(_memCache).forEach(k => delete _memCache[k])
+}
+
 function load(key) {
+  if (_memCache[key] !== undefined) return _memCache[key]
   try {
     const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : []
+    const v = raw ? JSON.parse(raw) : []
+    _memCache[key] = v
+    return v
   } catch {
     return []
   }
 }
 
 function save(key, data) {
+  _memCache[key] = data
   localStorage.setItem(key, JSON.stringify(data))
 }
 
@@ -120,10 +130,9 @@ export function addMatch(tableId, playerIds) {
 export function updateMatchScores(matchId, scores) {
   const matches = getMatches()
   const idx = matches.findIndex(m => m.id === matchId)
-  if (idx === -1) return null
+  if (idx === -1) return
   matches[idx].scores = scores
   save(KEYS.MATCHES, matches)
-  return matches[idx]
 }
 
 export function clearMatches() {
@@ -154,15 +163,19 @@ export function deleteMatchByTable(tableId) {
 // ── Settings ────────────────────────────────────────────
 
 export function getSettings() {
+  if (_memCache['mg_settings'] !== undefined) return _memCache['mg_settings']
   try {
     const r = localStorage.getItem('mg_settings')
-    return r ? JSON.parse(r) : {}
+    const v = r ? JSON.parse(r) : {}
+    _memCache['mg_settings'] = v
+    return v
   } catch {
     return {}
   }
 }
 
 export function saveSettings(s) {
+  _memCache['mg_settings'] = s
   localStorage.setItem('mg_settings', JSON.stringify(s))
 }
 

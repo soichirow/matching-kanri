@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>マッチング管理</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c6ff7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect width='18' height='18' x='3' y='3' rx='2'/><path d='m16 8-4 4-4-4'/><path d='m16 16-4-4-4 4'/></svg>">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" integrity="sha384-+8nbzwDAyu5kAjqtR/XKxIgPHQD2TflvbZgeDZn5t3JP+OOogNH1jXnfel8ZAgzS" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.103.0/dist/umd/supabase.min.js" integrity="sha384-PsnFqJ58vyp7buRfuvdS2SrjRdUYinBv6lWwJXx3xQ17hWefo/UkwXowVBT53ubG" crossorigin="anonymous"></script>
 <style>
 /* ── リセット & 変数 ─────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,13 +16,13 @@
   --surface:   #1c1d27;
   --surface2:  #252639;
   --border:    #2e3049;
-  --accent:    #7c6ff7;
+  --accent:    #9389f9;
   --accent2:   #4fc3f7;
   --success:   #43e97b;
   --warning:   #f9a825;
   --danger:    #ef5350;
   --text:      #e2e4f0;
-  --text-dim:  #8b8eaa;
+  --text-dim:  #9fa2bf;
   --radius:    10px;
   --shadow:    0 4px 12px rgba(0,0,0,0.5);
   --shadow-overlay: rgba(0,0,0,0.65);
@@ -34,7 +34,7 @@
   --surface:   #ffffff;
   --surface2:  #e8e9f0;
   --border:    #d0d1da;
-  --accent:    #6b5ce7;
+  --accent:    #5b4bd7;
   --accent2:   #0288d1;
   --success:   #2e8b57;
   --warning:   #e68a00;
@@ -664,8 +664,11 @@ body {
   .player-item { padding: 8px 8px; }
   .group-badge, .bracket-badge { min-width: 20px; text-align: center; }
   .status-btn { min-height: 34px; padding: 6px 12px; }
-  .delete-btn { width: 34px; height: 34px; font-size: 16px; }
-  .dlg-footer .btn { min-height: 40px; padding: 8px 16px; }
+  .delete-btn { width: 44px; height: 44px; font-size: 16px; }
+  .panel-tool-btn { min-width: 44px; min-height: 44px; }
+  .table-actions button { min-width: 44px; min-height: 44px; }
+  .dlg-close-btn { min-width: 44px; min-height: 44px; }
+  .dlg-footer .btn { min-height: 44px; padding: 8px 16px; }
 
   .dlg-box { width: 96vw; }
   .paste-box { width: 96vw !important; }
@@ -686,26 +689,30 @@ body {
   <header class="app-header">
     <span class="header-title" id="header-title">マッチング管理</span>
     <div class="header-actions">
-      <select id="quick-add-table-count" class="quick-select">
+      <select id="quick-add-table-count" class="quick-select" aria-label="テーブル数">
         <option value="1">1</option><option value="2">2</option><option value="3">3</option>
         <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
         <option value="8">8</option><option value="10">10</option><option value="12">12</option>
         <option value="16">16</option><option value="20">20</option>
       </select>
+      <select id="quick-add-table-size" class="quick-select" aria-label="テーブル人数">
+        <option value="2">2人</option><option value="3">3人</option><option value="4" selected>4人</option>
+        <option value="5">5人</option><option value="6">6人</option><option value="7">7人</option><option value="8">8人</option>
+      </select>
       <button class="panel-add-btn" id="btn-quick-add-tables">＋卓</button>
       <span class="panel-sep"></span>
-      <select id="quick-add-count" class="quick-select">
+      <select id="quick-add-count" class="quick-select" aria-label="プレイヤー数">
         <option value="1">1</option><option value="2">2</option><option value="3">3</option>
         <option value="4">4</option><option value="5">5</option><option value="6">6</option>
         <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
         <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
       </select>
       <button class="panel-add-btn" id="btn-quick-add">＋人</button>
-      <button class="panel-tool-btn" id="btn-open-paste" title="Excelから一括入力"><i data-lucide="clipboard-list"></i></button>
+      <button class="panel-tool-btn" id="btn-open-paste" title="Excelから一括入力" aria-label="Excelから一括入力"><i data-lucide="clipboard-list"></i></button>
       <span style="flex:1;"></span>
-      <button id="btn-standings"     class="btn btn-monitor" title="順位表" style="padding:6px 10px;"><i data-lucide="trophy"></i></button>
-      <button id="btn-help"          class="btn btn-monitor" style="padding:6px 10px;"><i data-lucide="circle-help"></i></button>
-      <button id="btn-settings"      class="btn btn-monitor" style="padding:6px 10px;"><i data-lucide="settings"></i></button>
+      <button id="btn-standings"     class="btn btn-monitor" title="順位表" aria-label="順位表" style="padding:6px 10px;"><i data-lucide="trophy"></i></button>
+      <button id="btn-help"          class="btn btn-monitor" title="ヘルプ" aria-label="ヘルプ" style="padding:6px 10px;"><i data-lucide="circle-help"></i></button>
+      <button id="btn-settings"      class="btn btn-monitor" title="設定" aria-label="設定" style="padding:6px 10px;"><i data-lucide="settings"></i></button>
     </div>
   </header>
 
@@ -713,7 +720,7 @@ body {
     <aside class="player-panel" id="player-panel">
       <div class="panel-toolbar">
         <span id="player-stats" class="player-stats"></span>
-        <button class="panel-tool-btn" id="btn-toggle-checks" title="選択モード切替"><i data-lucide="list-checks"></i></button>
+        <button class="panel-tool-btn" id="btn-toggle-checks" title="選択モード切替" aria-label="選択モード切替"><i data-lucide="list-checks"></i></button>
       </div>
       <div id="player-list"></div>
     </aside>
@@ -721,10 +728,10 @@ body {
     <main class="canvas-wrap" id="canvas-wrap">
       <div id="canvas"></div>
       <div class="zoom-controls" id="zoom-controls">
-        <button id="zoom-out" title="縮小">−</button>
+        <button id="zoom-out" title="縮小" aria-label="縮小">−</button>
         <span id="zoom-label">100%</span>
-        <button id="zoom-in" title="拡大">+</button>
-        <button id="zoom-reset" title="リセット" style="font-size:11px;">↺</button>
+        <button id="zoom-in" title="拡大" aria-label="拡大">+</button>
+        <button id="zoom-reset" title="リセット" aria-label="ズームリセット" style="font-size:11px;">↺</button>
       </div>
     </main>
   </div>
@@ -742,18 +749,18 @@ body {
         <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
         規定以下も配席
       </label>
-      <button id="btn-undo" class="btn btn-monitor" title="元に戻す" style="padding:6px 10px;"><i data-lucide="undo-2"></i></button>
+      <button id="btn-undo" class="btn btn-monitor" title="元に戻す" aria-label="元に戻す" style="padding:6px 10px;"><i data-lucide="undo-2"></i></button>
     </div>
   </footer>
   <div class="app-footer">(c) そういちろう — <a href="https://x.com/black777cat" target="_blank" rel="noopener">@black777cat</a> ｜ <a href="https://github.com/soichirow/matching-kanri" target="_blank" rel="noopener">GitHub</a> ｜ <a href="https://www.amazon.jp/hz/wishlist/ls/1Z0X9ZM1D65A7?ref_=wl_share" target="_blank" rel="noopener">支援する</a> ｜ <a href="https://x.com/intent/tweet?text=%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%81%AE%E3%83%9E%E3%83%83%E3%83%81%E3%83%B3%E3%82%B0%E7%AE%A1%E7%90%86%E3%82%A2%E3%83%97%E3%83%AA%E3%80%82%E7%84%A1%E6%96%99%E3%81%A7%E4%BD%BF%E3%81%88%E3%81%BE%E3%81%99%EF%BC%81&url=https%3A%2F%2Fsoichirow.github.io%2Fmatching-kanri%2F" target="_blank" rel="noopener">Xで共有</a></div>
 </div>
 
 <!-- カスタムダイアログ -->
-<div id="dlg-overlay" class="dlg-overlay hidden">
+<div id="dlg-overlay" class="dlg-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
   <div id="dlg-box" class="dlg-box">
     <div class="dlg-header">
       <span id="dlg-title" class="dlg-title"></span>
-      <button class="dlg-close-btn" id="dlg-close">×</button>
+      <button class="dlg-close-btn" id="dlg-close" aria-label="閉じる">×</button>
     </div>
     <div id="dlg-body" class="dlg-body"></div>
     <div class="dlg-footer" id="dlg-footer"></div>
@@ -761,14 +768,14 @@ body {
 </div>
 
 <!-- トースト -->
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <!-- 貼り付けモーダル -->
-<div id="paste-modal" class="paste-modal hidden">
+<div id="paste-modal" class="paste-modal hidden" role="dialog" aria-modal="true" aria-label="Excelから一括入力">
   <div class="paste-box">
     <div class="paste-box-header">
       <span>Excelから一括入力</span>
-      <button id="btn-paste-close">×</button>
+      <button id="btn-paste-close" aria-label="閉じる">×</button>
     </div>
 
     <div style="display:flex;gap:0;padding:10px 18px 0;">
@@ -785,7 +792,7 @@ body {
       サイズ列は省略可（省略時は4人）。
     </div>
 
-    <textarea id="paste-area" placeholder="ここにExcelのセルをそのまま貼り付け" spellcheck="false"></textarea>
+    <textarea id="paste-area" placeholder="ここにExcelのセルをそのまま貼り付け" aria-label="Excel貼り付け入力エリア" spellcheck="false"></textarea>
 
     <div id="paste-preview"></div>
 
@@ -803,11 +810,19 @@ body {
 // ════════════════════════════════════════════════════════
 const KEYS = { PLAYERS: 'mg_players', TABLES: 'mg_tables', MATCHES: 'mg_matches' }
 
+const _memCache = {}
 const _load = key => {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : [] }
+  if (_memCache[key] !== undefined) return _memCache[key]
+  try { const r = localStorage.getItem(key); const v = r ? JSON.parse(r) : []; _memCache[key] = v; return v }
   catch { return [] }
 }
-const _save = (key, data) => localStorage.setItem(key, JSON.stringify(data))
+const _save = (key, data) => {
+  _memCache[key] = data
+  try { localStorage.setItem(key, JSON.stringify(data)) }
+  catch (e) { _memCache[key] = undefined; console.error('localStorage save error:', e); toast?.('データの保存に失敗しました（容量不足の可能性）') }
+}
+const _removeKey = key => { _memCache[key] = undefined; localStorage.removeItem(key) }
+window.addEventListener('storage', () => { Object.keys(_memCache).forEach(k => _memCache[k] = undefined) })
 
 const generateId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 
@@ -894,10 +909,11 @@ const buildVpMap = (matches) => {
 const clearMatches = () => _save(KEYS.MATCHES, [])
 
 const getSettings = () => {
-  try { const r = localStorage.getItem('mg_settings'); return r ? JSON.parse(r) : {} }
+  if (_memCache['mg_settings'] !== undefined) return _memCache['mg_settings']
+  try { const r = localStorage.getItem('mg_settings'); const v = r ? JSON.parse(r) : {}; _memCache['mg_settings'] = v; return v }
   catch { return {} }
 }
-const saveSettings = s => localStorage.setItem('mg_settings', JSON.stringify(s))
+const saveSettings = s => { _memCache['mg_settings'] = s; localStorage.setItem('mg_settings', JSON.stringify(s)) }
 
 const deleteMatchByTable = tableId => {
   // そのテーブルで記録された直近1件のマッチを削除
@@ -941,12 +957,16 @@ const SUPABASE_URL = 'https://ufmjvdytyldpqlhgxzfm.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_BR3vLJ4Vlfm1QmGqa-kY6Q_Q7jkXcS1'
 const _supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null
 
-const _buildShareData = () => ({
-  players:  getPlayers(),
-  tables:   getTables(),
-  matches:  getMatches(),
-  settings: getSettings(),
-})
+const _buildShareData = () => {
+  const s = { ...getSettings() }
+  delete s.shareAdminKey
+  return {
+    players:  getPlayers(),
+    tables:   getTables(),
+    matches:  getMatches(),
+    settings: s,
+  }
+}
 
 let _syncTimer = null
 const _syncDebounce = () => {
@@ -956,9 +976,11 @@ const _syncDebounce = () => {
   _syncTimer = setTimeout(() => _syncNow(), 2000)
 }
 
+let _syncing = false
 const _syncNow = async () => {
   const s = getSettings()
-  if (!s.shareId || !s.shareAdminKey || !_supabase) return false
+  if (!s.shareId || !s.shareAdminKey || !_supabase || _syncing) return false
+  _syncing = true
   try {
     const { error } = await _supabase.rpc('update_tournament', {
       p_id: s.shareId,
@@ -971,6 +993,8 @@ const _syncNow = async () => {
   } catch (e) {
     console.error('Sync error:', e)
     return false
+  } finally {
+    _syncing = false
   }
 }
 
@@ -978,10 +1002,40 @@ const _syncNow = async () => {
 // matching — マッチングアルゴリズム
 // ════════════════════════════════════════════════════════
 
-const pairPenalty = (a, b, players, matches, vpMap = null) => {
-  const count = matches.filter(m => m.playerIds.includes(a) && m.playerIds.includes(b)).length
-  const pa = players.find(p => p.id === a)
-  const pb = players.find(p => p.id === b)
+// ペアカウントMap・プレイヤーMapを事前構築し O(1) ルックアップする
+const buildPairCountMap = matches => {
+  const map = new Map()
+  for (const m of matches) {
+    const pids = m.playerIds
+    for (let i = 0; i < pids.length; i++)
+      for (let j = i + 1; j < pids.length; j++) {
+        const key = pids[i] < pids[j] ? pids[i] + ':' + pids[j] : pids[j] + ':' + pids[i]
+        map.set(key, (map.get(key) ?? 0) + 1)
+      }
+  }
+  return map
+}
+const buildPlayerMap = players => {
+  const map = new Map()
+  for (const p of players) map.set(p.id, p)
+  return map
+}
+const getPairCount = (a, b, pairMap) => {
+  const key = a < b ? a + ':' + b : b + ':' + a
+  return pairMap.get(key) ?? 0
+}
+
+const pairPenalty = (a, b, players, matches, vpMap = null, _cache = null) => {
+  let count, pa, pb
+  if (_cache) {
+    count = getPairCount(a, b, _cache.pairMap)
+    pa = _cache.playerMap.get(a)
+    pb = _cache.playerMap.get(b)
+  } else {
+    count = matches.filter(m => m.playerIds.includes(a) && m.playerIds.includes(b)).length
+    pa = players.find(p => p.id === a)
+    pb = players.find(p => p.id === b)
+  }
   const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? 5 : 0
   let vpPen = 0
   if (vpMap) {
@@ -991,11 +1045,11 @@ const pairPenalty = (a, b, players, matches, vpMap = null) => {
   return count * 10 + groupPen + vpPen
 }
 
-const groupPenalty = (playerIds, players, matches, vpMap = null) => {
+const groupPenalty = (playerIds, players, matches, vpMap = null, _cache = null) => {
   let total = 0
   for (let i = 0; i < playerIds.length; i++)
     for (let j = i + 1; j < playerIds.length; j++)
-      total += pairPenalty(playerIds[i], playerIds[j], players, matches, vpMap)
+      total += pairPenalty(playerIds[i], playerIds[j], players, matches, vpMap, _cache)
   return total
 }
 
@@ -1018,14 +1072,14 @@ const shuffleArray = arr => {
   return a
 }
 
-const findBestGroup = (players, size, allPlayers, matches, vpMap = null) => {
+const findBestGroup = (players, size, allPlayers, matches, vpMap = null, _cache = null) => {
   if (players.length < size) return null
   const ids = players.map(p => p.id)
 
   if (ids.length <= 20) {
     let best = null, bestScore = Infinity
     combinations(ids, size).forEach(combo => {
-      const score = groupPenalty(combo, allPlayers, matches, vpMap)
+      const score = groupPenalty(combo, allPlayers, matches, vpMap, _cache)
       if (score < bestScore) { bestScore = score; best = combo }
     })
     return best
@@ -1037,7 +1091,7 @@ const findBestGroup = (players, size, allPlayers, matches, vpMap = null) => {
   while (result.length < size && remaining.length > 0) {
     let bestIdx = 0, bScore = Infinity
     for (let i = 0; i < remaining.length; i++) {
-      const s = groupPenalty([...result, remaining[i]], allPlayers, matches, vpMap)
+      const s = groupPenalty([...result, remaining[i]], allPlayers, matches, vpMap, _cache)
       if (s < bScore) { bScore = s; bestIdx = i }
     }
     result.push(remaining[bestIdx])
@@ -1066,6 +1120,9 @@ const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuf
   if (!waitingPlayers.length || !emptyTables.length) return []
   let pool = shuffle ? shuffleArray(waitingPlayers) : [...waitingPlayers]
 
+  // 事前キャッシュ構築 (O(1) ルックアップ)
+  const _cache = { pairMap: buildPairCountMap(matches), playerMap: buildPlayerMap(allPlayers) }
+
   // 満席テーブルを先に、端数テーブルを末尾に配置するため
   // まず満席分を割り当て、余りを最後のテーブルに回す
   const fullTables = []
@@ -1093,10 +1150,10 @@ const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuf
     if (shortPlayerIds && actualSize < table.size) {
       const nonShortPool = pool.filter(p => !shortPlayerIds.has(p.id))
       if (nonShortPool.length >= actualSize) {
-        best = findBestGroup(nonShortPool, actualSize, allPlayers, matches, vpMap)
+        best = findBestGroup(nonShortPool, actualSize, allPlayers, matches, vpMap, _cache)
       }
     }
-    if (!best) best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap)
+    if (!best) best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap, _cache)
     if (!best) continue
     assignments.push({ tableId: table.id, playerIds: best })
     pool = pool.filter(p => !best.includes(p.id))
@@ -1227,7 +1284,8 @@ let canvasZoom = 1
 const applyZoom = () => {
   const canvas = document.getElementById('canvas')
   if (!canvas) return
-  canvas.style.zoom = canvasZoom
+  canvas.style.transform = `scale(${canvasZoom})`
+  canvas.style.transformOrigin = '0 0'
   const label = document.getElementById('zoom-label')
   if (label) label.textContent = `${Math.round(canvasZoom * 100)}%`
 }
@@ -1269,13 +1327,13 @@ const saveUndoSnapshot = desc => {
 const undo = () => {
   if (!UNDO_STACK.length) { toast('元に戻せる操作がありません'); return }
   const snap = UNDO_STACK.pop()
-  localStorage.setItem('mg_players', snap.players)
-  localStorage.setItem('mg_tables',  snap.tables)
-  localStorage.setItem('mg_matches', snap.matches)
+  _memCache[KEYS.PLAYERS] = undefined; localStorage.setItem('mg_players', snap.players)
+  _memCache[KEYS.TABLES]  = undefined; localStorage.setItem('mg_tables',  snap.tables)
+  _memCache[KEYS.MATCHES] = undefined; localStorage.setItem('mg_matches', snap.matches)
   pendingMatches = []
   selectedTables = {}
   checkedPlayers.clear()
-  render()
+  scheduleRender()
   toast(`元に戻しました：${snap.desc}`)
 }
 
@@ -1300,8 +1358,19 @@ const render = () => {
   renderRoomObjects()
   renderTables()
   renderMatchingBar()
-  if (window.lucide) lucide.createIcons()
+  if (window.lucide) {
+    const targets = [document.getElementById('player-list'), document.getElementById('canvas'), document.getElementById('matching-bar')].filter(Boolean)
+    if (targets.length) targets.forEach(el => lucide.createIcons({ nodes: [el] }))
+    else lucide.createIcons()
+  }
   _syncDebounce()
+}
+
+let _renderScheduled = false
+const scheduleRender = () => {
+  if (_renderScheduled) return
+  _renderScheduled = true
+  queueMicrotask(() => { _renderScheduled = false; render() })
 }
 
 const countRounds = () => {
@@ -1334,6 +1403,9 @@ let checkedPlayers = new Set()   // マッチング指定チェック
 const renderPlayers = () => {
   const list = document.getElementById('player-list')
   if (!list) return
+  const _scrollTop = list.scrollTop
+  const _focusedId = document.activeElement?.closest?.('[data-id]')?.dataset?.id
+  const _focusedAction = document.activeElement?.dataset?.action
   const tables  = getTables()
   const settings_ = getSettings()
   const vpEnabled = !!settings_.enableVP
@@ -1401,12 +1473,20 @@ const renderPlayers = () => {
       ${(bracketEnabled && p.bracket) || p.group ? `<span class="badge-wrap">${bracketEnabled && p.bracket ? `<span class="bracket-badge" title="ブラケット">${esc(p.bracket)}</span>` : ''}${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}</span>` : ''}
       ${vpEnabled && vpMap[p.id] != null ? `<span class="score-badge" title="累計点数">${vpMap[p.id]}pt</span>` : ''}
       ${tblBadge}
-      <button class="delete-btn" data-action="history" data-id="${p.id}" title="対戦履歴"><i data-lucide="history"></i></button>
+      <button class="delete-btn" data-action="history" data-id="${p.id}" title="対戦履歴" aria-label="対戦履歴"><i data-lucide="history"></i></button>
       <button class="status-btn s-${p.status}" ${p.status !== 'playing' ? `data-action="cycle" data-id="${p.id}"` : 'disabled title="テーブルから外すと自動で待機に戻ります"'}>${statusLabel(p.status)}</button>
-      <button class="delete-btn" data-action="del-player" data-id="${p.id}" title="削除">×</button>
+      <button class="delete-btn" data-action="del-player" data-id="${p.id}" title="削除" aria-label="プレイヤー削除">×</button>
     </div>`
   })
   list.innerHTML = html
+  list.scrollTop = _scrollTop
+  if (_focusedId) {
+    const row = list.querySelector(`[data-id="${_focusedId}"]`)
+    if (row) {
+      const target = _focusedAction ? row.querySelector(`[data-action="${_focusedAction}"]`) : row.querySelector('input')
+      target?.focus()
+    }
+  }
 }
 
 const renderRoomObjects = () => {
@@ -1601,35 +1681,48 @@ const cycleStatus = id => {
   if (!p || p.status === 'playing') return   // 対戦中は手動変更不可
   const isExcluded = p.status === 'excluded' || p.status === 'break' || p.status === 'left'
   updatePlayer(id, { status: isExcluded ? 'waiting' : 'excluded' })
-  render()
+  scheduleRender()
 }
 
 const finishTable = id => {
   const t = getTables().find(x => x.id === id)
-  if (!t) return
+  if (!t || t.status !== 'playing') return
   saveUndoSnapshot(`テーブル終了：${t.label}`)
   t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
   updateTable(id, { status: 'empty', playerIds: [] })
-  render()
+  scheduleRender()
 }
 
 // ── カスタムダイアログ（グローバル） ─────────────────────────
 let _dlgResolve = null
+let _dlgTrigger = null
 
 const _openDlg = (title, bodyHTML, footerHTML) => new Promise(resolve => {
+  _dlgTrigger = document.activeElement
   _dlgResolve = resolve
   document.getElementById('dlg-title').innerHTML   = title
   document.getElementById('dlg-body').innerHTML    = bodyHTML
   document.getElementById('dlg-footer').innerHTML  = footerHTML
+  document.getElementById('app').inert = true
+  document.getElementById('paste-modal').inert = true
   document.getElementById('dlg-overlay').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
   if (window.lucide) lucide.createIcons()
-  setTimeout(() => document.querySelector('#dlg-body input[type=text]')?.focus(), 50)
+  setTimeout(() => {
+    const first = document.querySelector('#dlg-body input[type=text]') || document.querySelector('#dlg-footer button')
+    first?.focus()
+  }, 50)
 })
 
 const _closeDlg = val => {
   document.getElementById('dlg-overlay').classList.add('hidden')
+  document.getElementById('app').inert = false
+  document.getElementById('paste-modal').inert = false
+  document.body.style.overflow = ''
   _dlgResolve?.(val ?? null)
   _dlgResolve = null
+  if (_dlgTrigger && _dlgTrigger.isConnected) _dlgTrigger.focus()
+  _dlgTrigger = null
 }
 
 const dlgConfirm = (msg, okLabel = '削除', okClass = 'btn-del') => _openDlg(
@@ -1657,7 +1750,7 @@ const finishAllTables = async () => {
     t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
     updateTable(t.id, { status: 'empty', playerIds: [] })
   })
-  render()
+  scheduleRender()
   toast(`${playing.length}卓を終了しました`)
 }
 
@@ -1669,7 +1762,7 @@ const disbandTable = async id => {
   t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
   deleteMatchByTable(id)
   updateTable(id, { status: 'empty', playerIds: [] })
-  render()
+  scheduleRender()
   toast(`${t.label} を解散しました（マッチング履歴を取り消し）`)
 }
 
@@ -1747,7 +1840,7 @@ const doConfirmMatching = () => {
   })
   pendingMatches = []
   checkedPlayers.clear()
-  render()
+  scheduleRender()
 }
 
 const doCancelMatching = () => {
@@ -1857,7 +1950,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const bracket = customBracket || document.querySelector('#dlg-bracket-pills .dlg-pill.active')?.dataset.val || null
       const p = addPlayer(name, group || null)
       if (bracket) updatePlayer(p.id, { bracket })
-      render()
+      scheduleRender()
     })
   }
 
@@ -1879,7 +1972,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = 'プレイヤー' + String(num).padStart(2, '0')
       if (!existing.has(name)) { addPlayer(name, null); existing.add(name); added++ }
     }
-    render()
+    scheduleRender()
     toast(`${added}人追加しました`)
   }
 
@@ -1931,7 +2024,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const customBracket = document.getElementById('dlg-bracket-custom-edit')?.value.trim()
       const bracket = customBracket || document.querySelector('#dlg-bracket-pills-edit .dlg-pill.active')?.dataset.val || null
       updatePlayer(id, { name, group: group || null, bracket: bracket || null })
-      render()
+      scheduleRender()
     })
   }
 
@@ -2023,7 +2116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!label) { toast('テーブル名を入力してください'); return }
     const size  = Number(document.querySelector('#dlg-size-pills .dlg-pill.active')?.dataset.val ?? 4)
     addTable(label, size)
-    render()
+    scheduleRender()
   })
 
   // テーブル名変更ダイアログ
@@ -2043,7 +2136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = document.getElementById('dlg-rname')?.value.trim()
       if (!name) return
       updateTable(tableId, { label: name })
-      render()
+      scheduleRender()
     })
   }
 
@@ -2096,7 +2189,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         addRoomObject(label, color)
       }
-      render()
+      scheduleRender()
     })
   }
 
@@ -2241,7 +2334,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const theme = document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark'
       saveSettings({ ...getSettings(), tournamentName, minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, avoidShort, enableVP, vpMatching, theme })
       applyTheme(theme)
-      render()
+      scheduleRender()
       toast('設定を保存しました')
     })
   }
@@ -2257,25 +2350,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── イベント共有ボタン ──
     if (e.target.closest('#dlg-share-start')) {
       (async () => {
+        if (!_supabase) { toast('Supabaseに接続できません'); return }
         const adminKey = crypto.randomUUID()
         const { data: result, error } = await _supabase.rpc('create_tournament', { p_data: _buildShareData(), p_admin_key: adminKey })
         if (error) { toast('共有の開始に失敗しました'); console.error(error); return }
         saveSettings({ ...getSettings(), shareId: result.id, shareCode: result.short_code, shareAdminKey: adminKey, shareSync: true, shareLastSync: Date.now() })
         _closeDlg(null)
         toast('イベントを共有しました！')
-        render()
+        scheduleRender()
         setTimeout(dlgSettings, 200)
       })()
       return
     }
     if (e.target.closest('#dlg-share-copy-code')) {
       const code = getSettings().shareCode
-      if (code) navigator.clipboard.writeText(code).then(() => toast('参加コードをコピーしました'))
+      if (code) navigator.clipboard.writeText(code).then(() => toast('参加コードをコピーしました')).catch(() => toast('コピーに失敗しました'))
       return
     }
     if (e.target.closest('#dlg-share-copy')) {
       const url = document.getElementById('dlg-share-url')?.textContent
-      if (url) navigator.clipboard.writeText(url).then(() => toast('URLをコピーしました'))
+      if (url) navigator.clipboard.writeText(url).then(() => toast('URLをコピーしました')).catch(() => toast('コピーに失敗しました'))
       return
     }
     if (e.target.closest('#dlg-share-qr')) {
@@ -2317,12 +2411,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dlgConfirm('イベントの共有を停止しますか？<br><small>参加者はURLにアクセスできなくなります。</small>', '停止', 'btn-del').then(ok => {
           if (!ok) return
           const s = getSettings()
-          if (s.shareId && s.shareAdminKey) {
-            _supabase.rpc('delete_tournament', { p_id: s.shareId, p_admin_key: s.shareAdminKey }).then(() => {})
+          if (s.shareId && s.shareAdminKey && _supabase) {
+            _supabase.rpc('delete_tournament', { p_id: s.shareId, p_admin_key: s.shareAdminKey }).catch(e => console.error('Delete error:', e))
           }
           saveSettings({ ...getSettings(), shareId: null, shareAdminKey: null, shareSync: false, shareLastSync: null })
           toast('共有を停止しました')
-          render()
+          scheduleRender()
         })
       }, 100)
       return
@@ -2332,7 +2426,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         dlgConfirm('新しいイベントを始めますか？<br><small>プレイヤーと対戦履歴がリセットされます。テーブル配置は維持されます。</small>', '開始', 'btn-ok-add').then(ok => {
           if (!ok) return
-          localStorage.removeItem('mg_players')
+          _removeKey('mg_players')
           clearMatches()
           pendingMatches = []
           checkedPlayers.clear()
@@ -2340,7 +2434,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // テーブルのステータスだけリセット
           getTables().forEach(t => updateTable(t.id, { status: 'empty', playerIds: [] }))
           saveSettings({ ...getSettings(), shareId: null, shareAdminKey: null, shareSync: false, shareLastSync: null })
-          render()
+          scheduleRender()
           toast('新しいイベントを開始しました')
         })
       }, 100)
@@ -2373,17 +2467,17 @@ document.addEventListener('DOMContentLoaded', () => {
           pendingMatches = []
         }
         if (btnId === 'dlg-clear-players' || btnId === 'dlg-clear-all') {
-          localStorage.removeItem('mg_players')
+          _removeKey('mg_players')
           checkedPlayers.clear()
         }
         if (btnId === 'dlg-clear-tables' || btnId === 'dlg-clear-all') {
-          localStorage.removeItem('mg_tables')
+          _removeKey('mg_tables')
           selectedTables = {}
         }
         if (btnId === 'dlg-clear-all') {
-          localStorage.removeItem('mg_objects')
+          _removeKey('mg_objects')
         }
-        render()
+        scheduleRender()
         toast('データをクリアしました')
       })
     }, 100)
@@ -2435,7 +2529,7 @@ document.addEventListener('DOMContentLoaded', () => {
       newIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
       const newStatus = newIds.length > 0 ? 'playing' : 'empty'
       updateTable(tableId, { playerIds: newIds, status: newStatus })
-      render()
+      scheduleRender()
     })
   }
 
@@ -2492,7 +2586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     )
     setTimeout(() => {
       document.getElementById('dlg-copy-standings')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(tsvData).then(() => toast('順位表をコピーしました'))
+        navigator.clipboard.writeText(tsvData).then(() => toast('順位表をコピーしました')).catch(() => toast('コピーに失敗しました'))
       })
       document.getElementById('dlg-dl-csv')?.addEventListener('click', () => {
         const csvRows = tsvData.replace(/\t/g, ',')
@@ -2553,9 +2647,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const doQuickAddTables = async () => {
     const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
+    const size = parseInt(document.getElementById('quick-add-table-size')?.value ?? '4', 10)
     if (!count || count < 1) return
     if (count === 1) { dlgAddTable(); return }
-    if (!await dlgConfirm(`テーブルを${count}卓追加しますか？`, '追加', 'btn-ok-add')) return
+    if (!await dlgConfirm(`${size}人卓を${count}卓追加しますか？`, '追加', 'btn-ok-add')) return
     const existing = new Set(getTables().map(t => t.label))
     let maxNum = 0
     existing.forEach(label => {
@@ -2567,10 +2662,10 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let i = 0; i < count; i++) {
       const num = maxNum + 1 + i
       const label = 'テーブル' + num
-      if (!existing.has(label)) { addTable(label, 4); existing.add(label); added++ }
+      if (!existing.has(label)) { addTable(label, size); existing.add(label); added++ }
     }
-    render()
-    toast(`${added}卓追加しました`)
+    scheduleRender()
+    toast(`${size}人卓を${added}卓追加しました`)
   }
   document.getElementById('btn-quick-add-tables').addEventListener('click', doQuickAddTables)
   const canvas = document.getElementById('canvas')
@@ -2600,7 +2695,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 人数プルダウン変更を即反映
       setTimeout(() => {
         document.getElementById('dlg-tm-size-sel')?.addEventListener('change', e2 => {
-          updateTable(id, { size: Number(e2.target.value) }); render()
+          updateTable(id, { size: Number(e2.target.value) }); scheduleRender()
         })
       }, 50)
       // メニュー内ボタンのイベント委譲
@@ -2613,7 +2708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (b.id === 'dlg-tm-members') dlgEditMembers(id)
         else if (b.id === 'dlg-tm-delete') {
           dlgConfirm(`<strong>${esc(tbl.label)}</strong> を削除しますか？`)
-            .then(ok => { if (ok) { deleteTable(id); delete selectedTables[id]; render() } })
+            .then(ok => { if (ok) { deleteTable(id); delete selectedTables[id]; scheduleRender() } })
         }
       }
       document.getElementById('dlg-body').addEventListener('click', handler)
@@ -2627,7 +2722,7 @@ document.addEventListener('DOMContentLoaded', () => {
         delete selectedTables[m.tableId]
         pendingMatches = pendingMatches.filter(x => x.tableId !== id)
         checkedPlayers.clear()
-        render()
+        scheduleRender()
       }
     } else if (action === 'cancel-one') {
       pendingMatches = pendingMatches.filter(x => x.tableId !== id)
@@ -2645,7 +2740,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!obj) return
       saveUndoSnapshot(`オブジェクト削除：${obj.label}`)
       deleteRoomObject(id)
-      render()
+      scheduleRender()
     }
   })
 
@@ -2659,7 +2754,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!vpInp) return
     const matchId = vpInp.dataset.matchId
     const pid     = vpInp.dataset.pid
-    const val     = vpInp.value.trim() === '' ? null : Number(vpInp.value)
+    const num     = parseFloat(vpInp.value)
+    const val     = vpInp.value.trim() === '' || isNaN(num) ? null : num
     const allMatches = getMatches()
     const match = allMatches.find(m => m.id === matchId)
     if (!match) return
@@ -2683,7 +2779,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (action === 'del-player') {
       const p = getPlayers().find(x => x.id === id)
       dlgConfirm(`<strong>${esc(p?.name ?? '')}</strong> を削除しますか？`)
-        .then(ok => { if (ok) { checkedPlayers.delete(id); deletePlayer(id); render() } })
+        .then(ok => { if (ok) { checkedPlayers.delete(id); deletePlayer(id); scheduleRender() } })
     }
   })
 
@@ -2721,17 +2817,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Excelから一括入力モーダル ────────────────────────────
   let pasteTab = 'player'
 
+  let _pasteTrigger = null
   const openPasteModal = () => {
+    _pasteTrigger = document.activeElement
     document.getElementById('paste-area').value = ''
     document.getElementById('paste-preview').style.display = 'none'
     document.getElementById('paste-preview').innerHTML = ''
     document.getElementById('btn-paste-import').disabled = true
+    document.getElementById('app').inert = true
     document.getElementById('paste-modal').classList.remove('hidden')
+    document.body.style.overflow = 'hidden'
     document.getElementById('paste-area').focus()
   }
 
   const closePasteModal = () => {
     document.getElementById('paste-modal').classList.add('hidden')
+    document.getElementById('app').inert = false
+    document.body.style.overflow = ''
+    if (_pasteTrigger && _pasteTrigger.isConnected) _pasteTrigger.focus()
+    _pasteTrigger = null
   }
 
   const switchTab = tab => {
@@ -2848,7 +2952,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     closePasteModal()
-    render()
+    scheduleRender()
   }
 
   document.getElementById('btn-open-paste').addEventListener('click', openPasteModal)
@@ -2874,6 +2978,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('paste-modal').addEventListener('click', e => {
     if (e.target === document.getElementById('paste-modal')) closePasteModal()
+  })
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !document.getElementById('paste-modal').classList.contains('hidden'))
+      closePasteModal()
   })
 
   // ── ズーム ─────────────────────────────────────────────────
@@ -2937,7 +3045,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRoomObject(obj.id, { x, y })
       }
     })
-    render()
+    scheduleRender()
   }
 
   // ── サイドバーリサイズ ───────────────────────────────────

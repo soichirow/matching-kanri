@@ -12,7 +12,7 @@ test('IDなしでアクセスするとコード入力画面が表示', async ({ 
 
 test('存在しないIDでアクセスするとエラー表示', async ({ page }) => {
   await page.goto('/view.html?id=nonexistent-id-12345')
-  await page.waitForTimeout(3000)
+  await page.waitForSelector('.error-msg', { timeout: 10000 })
   await expect(page.locator('.error-msg')).toBeVisible()
 })
 

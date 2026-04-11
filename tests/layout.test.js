@@ -1,4 +1,4 @@
-import { enableDrag, applyPosition, getPosition } from '../src/layout.js'
+import { enableDrag, applyPosition, getPosition, snap, SNAP_GRID, isMobile } from '../src/layout.js'
 
 /**
  * マウスイベントを発火するヘルパー
@@ -18,8 +18,8 @@ describe('enableDrag', () => {
 
   beforeEach(() => {
     el = document.createElement('div')
-    el.style.left = '10px'
-    el.style.top = '20px'
+    el.style.left = '28px'
+    el.style.top = '28px'
     document.body.appendChild(el)
   })
 
@@ -27,17 +27,23 @@ describe('enableDrag', () => {
     el.remove()
   })
 
-  it('mousedown→mousemove→mouseupで位置変更しonMoveが呼ばれる', () => {
+  it('mousedown→mousemove→mouseupで位置変更しonMoveがend時のみ呼ばれる', () => {
     const onMove = vi.fn()
     enableDrag(el, onMove)
 
     fireMouseDown(el, 100, 100)
-    fireMouseMove(150, 130)
-    fireMouseUp()
+    expect(onMove).not.toHaveBeenCalled() // move中はまだ呼ばれない
 
-    expect(el.style.left).toBe('60px')  // 10 + (150-100)
-    expect(el.style.top).toBe('50px')   // 20 + (130-100)
-    expect(onMove).toHaveBeenCalledWith(60, 50)
+    fireMouseMove(156, 128)
+    expect(onMove).not.toHaveBeenCalled() // move中はまだ呼ばれない
+
+    fireMouseUp()
+    // end時にスナップされた座標でonMoveが呼ばれる
+    expect(onMove).toHaveBeenCalledTimes(1)
+    const [x, y] = onMove.mock.calls[0]
+    // スナップされた値（SNAP_GRID=28の倍数）
+    expect(x % SNAP_GRID).toBe(0)
+    expect(y % SNAP_GRID).toBe(0)
   })
 
   it('ドラッグ中にdraggingクラスが付与され、mouseupで除去', () => {
@@ -101,6 +107,42 @@ describe('enableDrag', () => {
 
     expect(onMove).not.toHaveBeenCalled()
     expect(el.classList.contains('dragging')).toBe(false)
+  })
+
+  it('ドラッグ終了時にグリッドスナップされる', () => {
+    const onMove = vi.fn()
+    enableDrag(el, onMove)
+
+    // 28px開始で、+45pxドラッグ → 73px → snap(73) = 84 (28*3)
+    fireMouseDown(el, 100, 100)
+    fireMouseMove(145, 145)
+    fireMouseUp()
+
+    const [x, y] = onMove.mock.calls[0]
+    expect(x).toBe(snap(28 + 45)) // snap(73) = 84
+    expect(y).toBe(snap(28 + 45)) // snap(73) = 84
+  })
+})
+
+describe('snap', () => {
+  it('0 → 0', () => {
+    expect(snap(0)).toBe(0)
+  })
+
+  it('28 → 28', () => {
+    expect(snap(28)).toBe(28)
+  })
+
+  it('14 → 28 (四捨五入)', () => {
+    expect(snap(14)).toBe(28)
+  })
+
+  it('13 → 0 (四捨五入)', () => {
+    expect(snap(13)).toBe(0)
+  })
+
+  it('SNAP_GRID定数は28', () => {
+    expect(SNAP_GRID).toBe(28)
   })
 })
 

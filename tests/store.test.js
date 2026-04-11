@@ -3,10 +3,15 @@ import {
   getPlayers, addPlayer, updatePlayer, deletePlayer,
   getTables, addTable, updateTable, deleteTable,
   getMatches, addMatch, updateMatchScores, clearMatches,
+  buildVpMap, deleteMatchByTable,
+  getSettings, saveSettings,
+  getRoomObjects, addRoomObject, updateRoomObject, deleteRoomObject,
+  _clearCache,
 } from '../src/store.js'
 
 beforeEach(() => {
   localStorage.clear()
+  _clearCache()
 })
 
 // ── Players CRUD ────────────────────────────────────────
@@ -129,27 +134,31 @@ describe('Matches', () => {
 
   it('スコア記録(プラス)', () => {
     const m = addMatch('t1', ['p1', 'p2'])
-    const updated = updateMatchScores(m.id, { p1: 10, p2: 5 })
+    updateMatchScores(m.id, { p1: 10, p2: 5 })
+    const updated = getMatches().find(x => x.id === m.id)
     expect(updated.scores).toEqual({ p1: 10, p2: 5 })
   })
 
   it('スコア記録(マイナス)', () => {
     const m = addMatch('t1', ['p1', 'p2'])
-    const updated = updateMatchScores(m.id, { p1: -3, p2: -7 })
+    updateMatchScores(m.id, { p1: -3, p2: -7 })
+    const updated = getMatches().find(x => x.id === m.id)
     expect(updated.scores).toEqual({ p1: -3, p2: -7 })
   })
 
   it('スコア上書き', () => {
     const m = addMatch('t1', ['p1', 'p2'])
     updateMatchScores(m.id, { p1: 10, p2: 5 })
-    const updated = updateMatchScores(m.id, { p1: 20, p2: 15 })
+    updateMatchScores(m.id, { p1: 20, p2: 15 })
+    const updated = getMatches().find(x => x.id === m.id)
     expect(updated.scores).toEqual({ p1: 20, p2: 15 })
   })
 
   it('スコアをnullに戻す', () => {
     const m = addMatch('t1', ['p1', 'p2'])
     updateMatchScores(m.id, { p1: 10, p2: 5 })
-    const updated = updateMatchScores(m.id, null)
+    updateMatchScores(m.id, null)
+    const updated = getMatches().find(x => x.id === m.id)
     expect(updated.scores).toBeNull()
   })
 
@@ -164,7 +173,131 @@ describe('Matches', () => {
     expect(getTables()).toHaveLength(1)
   })
 
-  it('存在しないmatchId→null', () => {
-    expect(updateMatchScores('no-such-id', { p1: 10 })).toBeNull()
+  it('存在しないmatchId→undefinedで例外なし', () => {
+    expect(updateMatchScores('no-such-id', { p1: 10 })).toBeUndefined()
+  })
+})
+
+// ── buildVpMap ──────────────────────────────────────────
+
+describe('buildVpMap', () => {
+  it('空配列 → 空オブジェクト', () => {
+    expect(buildVpMap([])).toEqual({})
+  })
+
+  it('scoresなし → スキップ', () => {
+    const matches = [{ playerIds: ['p1', 'p2'], tableId: 't1', scores: null }]
+    expect(buildVpMap(matches)).toEqual({})
+  })
+
+  it('累積計算', () => {
+    const matches = [
+      { playerIds: ['p1', 'p2'], tableId: 't1', scores: { p1: 10, p2: 5 } },
+      { playerIds: ['p1', 'p3'], tableId: 't2', scores: { p1: 8, p3: 12 } },
+    ]
+    expect(buildVpMap(matches)).toEqual({ p1: 18, p2: 5, p3: 12 })
+  })
+
+  it('null値は0扱い', () => {
+    const matches = [
+      { playerIds: ['p1'], tableId: 't1', scores: { p1: null } },
+      { playerIds: ['p1'], tableId: 't2', scores: { p1: 7 } },
+    ]
+    expect(buildVpMap(matches)).toEqual({ p1: 7 })
+  })
+})
+
+// ── deleteMatchByTable ──────────────────────────────────
+
+describe('deleteMatchByTable', () => {
+  it('直近1件のみ削除', () => {
+    addMatch('t1', ['p1', 'p2'])
+    addMatch('t1', ['p1', 'p3'])
+    addMatch('t2', ['p3', 'p4'])
+    expect(getMatches()).toHaveLength(3)
+    deleteMatchByTable('t1')
+    const remaining = getMatches()
+    expect(remaining).toHaveLength(2)
+    // t1の最初のマッチは残り、2番目が削除される
+    expect(remaining.filter(m => m.tableId === 't1')).toHaveLength(1)
+  })
+
+  it('存在しないtableId → 変化なし', () => {
+    addMatch('t1', ['p1', 'p2'])
+    deleteMatchByTable('no-such')
+    expect(getMatches()).toHaveLength(1)
+  })
+
+  it('空配列 → 例外なし', () => {
+    expect(() => deleteMatchByTable('t1')).not.toThrow()
+  })
+})
+
+// ── Settings ────────────────────────────────────────────
+
+describe('Settings', () => {
+  it('初期状態は空オブジェクト', () => {
+    expect(getSettings()).toEqual({})
+  })
+
+  it('保存→取得', () => {
+    saveSettings({ enableVP: true, theme: 'dark' })
+    const s = getSettings()
+    expect(s.enableVP).toBe(true)
+    expect(s.theme).toBe('dark')
+  })
+
+  it('上書き保存', () => {
+    saveSettings({ a: 1 })
+    saveSettings({ b: 2 })
+    expect(getSettings()).toEqual({ b: 2 })
+  })
+
+  it('不正JSONでも空オブジェクト', () => {
+    localStorage.setItem('mg_settings', '{broken')
+    expect(getSettings()).toEqual({})
+  })
+})
+
+// ── Room Objects ────────────────────────────────────────
+
+describe('Room Objects CRUD', () => {
+  it('追加でid/label/color/座標/サイズ設定', () => {
+    const obj = addRoomObject('壁', '#ff0000', 200, 100)
+    expect(obj.id).toBeTruthy()
+    expect(obj.label).toBe('壁')
+    expect(obj.color).toBe('#ff0000')
+    expect(obj.w).toBe(200)
+    expect(obj.h).toBe(100)
+    expect(typeof obj.x).toBe('number')
+    expect(typeof obj.y).toBe('number')
+  })
+
+  it('デフォルトcolor/w/h', () => {
+    const obj = addRoomObject('柱')
+    expect(obj.color).toBe('#4fc3f7')
+    expect(obj.w).toBe(240)
+    expect(obj.h).toBe(130)
+  })
+
+  it('更新', () => {
+    const obj = addRoomObject('壁')
+    const updated = updateRoomObject(obj.id, { label: '大壁', w: 500 })
+    expect(updated.label).toBe('大壁')
+    expect(updated.w).toBe(500)
+    expect(updated.color).toBe('#4fc3f7') // 他フィールド保持
+  })
+
+  it('存在しないID→null', () => {
+    expect(updateRoomObject('no-such', { label: 'x' })).toBeNull()
+  })
+
+  it('削除', () => {
+    const o1 = addRoomObject('A')
+    const o2 = addRoomObject('B')
+    deleteRoomObject(o1.id)
+    const remaining = getRoomObjects()
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].id).toBe(o2.id)
   })
 })

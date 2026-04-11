@@ -5,6 +5,10 @@ import {
   generateMatching,
   optimizeTableAssignment,
   buildScoreMap,
+  buildPairCountMap,
+  buildPlayerMap,
+  getPairCount,
+  getShortMatchPlayerIds,
 } from '../src/matching.js'
 
 // ── テスト用プレイヤーデータ ──────────────────────────────────
@@ -358,5 +362,133 @@ describe('buildScoreMap', () => {
     const map = buildScoreMap(matches)
     expect(map.p1).toBe(3) // null(=0) + 3
     expect(map.p2).toBe(5)
+  })
+})
+
+// ── buildPairCountMap / buildPlayerMap / getPairCount ────────
+
+describe('buildPairCountMap', () => {
+  it('空 → 空Map', () => {
+    expect(buildPairCountMap([]).size).toBe(0)
+  })
+
+  it('ペアカウント正確性', () => {
+    const matches = [
+      { playerIds: ['p1', 'p2', 'p3'], tableId: 't1' },
+      { playerIds: ['p1', 'p2'], tableId: 't2' },
+    ]
+    const map = buildPairCountMap(matches)
+    expect(getPairCount('p1', 'p2', map)).toBe(2)
+    expect(getPairCount('p1', 'p3', map)).toBe(1)
+    expect(getPairCount('p2', 'p3', map)).toBe(1)
+    expect(getPairCount('p1', 'p4', map)).toBe(0)
+  })
+
+  it('順序非依存（a,b と b,a は同じ）', () => {
+    const matches = [{ playerIds: ['p2', 'p1'], tableId: 't1' }]
+    const map = buildPairCountMap(matches)
+    expect(getPairCount('p1', 'p2', map)).toBe(1)
+    expect(getPairCount('p2', 'p1', map)).toBe(1)
+  })
+})
+
+describe('buildPlayerMap', () => {
+  it('IDでルックアップ可能', () => {
+    const map = buildPlayerMap(P)
+    expect(map.get('p1').name).toBe('P1')
+    expect(map.get('p8').group).toBe('C')
+    expect(map.get('no-such')).toBeUndefined()
+  })
+})
+
+// ── pairPenalty with _cache ─────────────────────────────────
+
+describe('pairPenalty with _cache', () => {
+  it('_cache使用時も結果は非キャッシュと同じ', () => {
+    const matches = [{ playerIds: ['p1', 'p2'], tableId: 't1' }]
+    const vpMap = { p1: 20, p2: 10 }
+    const _cache = { pairMap: buildPairCountMap(matches), playerMap: buildPlayerMap(P) }
+
+    const withoutCache = pairPenalty('p1', 'p2', P, matches, vpMap)
+    const withCache = pairPenalty('p1', 'p2', P, matches, vpMap, _cache)
+    expect(withCache).toBe(withoutCache)
+  })
+
+  it('_cache使用で対戦回数を正しく反映', () => {
+    const matches = [
+      { playerIds: ['p1', 'p3'], tableId: 't1' },
+      { playerIds: ['p1', 'p3'], tableId: 't2' },
+    ]
+    const _cache = { pairMap: buildPairCountMap(matches), playerMap: buildPlayerMap(P) }
+    // 2回対戦(20) + 異グループ(0) = 20
+    expect(pairPenalty('p1', 'p3', P, matches, null, _cache)).toBe(20)
+  })
+})
+
+// ── getShortMatchPlayerIds ──────────────────────────────────
+
+describe('getShortMatchPlayerIds', () => {
+  it('規定人数未満の直近対戦プレイヤーを検出', () => {
+    const tables = [{ id: 't1', size: 4 }]
+    const matches = [
+      { playerIds: ['p1', 'p2', 'p3'], tableId: 't1', timestamp: 100 },
+    ]
+    const ids = getShortMatchPlayerIds(matches, tables)
+    // 3人で4人卓 → 全員ショート
+    expect(ids.has('p1')).toBe(true)
+    expect(ids.has('p2')).toBe(true)
+    expect(ids.has('p3')).toBe(true)
+  })
+
+  it('満席対戦は検出しない', () => {
+    const tables = [{ id: 't1', size: 4 }]
+    const matches = [
+      { playerIds: ['p1', 'p2', 'p3', 'p4'], tableId: 't1', timestamp: 100 },
+    ]
+    const ids = getShortMatchPlayerIds(matches, tables)
+    expect(ids.size).toBe(0)
+  })
+
+  it('直近のマッチのみ参照', () => {
+    const tables = [{ id: 't1', size: 4 }]
+    const matches = [
+      { playerIds: ['p1', 'p2', 'p3'], tableId: 't1', timestamp: 100 },     // ショート
+      { playerIds: ['p1', 'p2', 'p3', 'p4'], tableId: 't1', timestamp: 200 }, // 満席（直近）
+    ]
+    const ids = getShortMatchPlayerIds(matches, tables)
+    // p1-p4は直近が満席なので検出されない; p3も直近に4人卓に参加
+    expect(ids.has('p1')).toBe(false)
+    expect(ids.has('p2')).toBe(false)
+  })
+
+  it('空マッチ → 空Set', () => {
+    expect(getShortMatchPlayerIds([], []).size).toBe(0)
+  })
+})
+
+// ── generateMatching with shortPlayerIds ────────────────────
+
+describe('generateMatching with shortPlayerIds', () => {
+  it('端数卓でshortプレイヤーを避ける', () => {
+    // 6人を4人卓×2に、minFill=2
+    // p1,p2が前回ショートだった
+    const tables = [{ id: 't1', size: 4 }, { id: 't2', size: 4 }]
+    const shortIds = new Set(['p1', 'p2'])
+    const result = generateMatching(P.slice(0, 6), tables, P, [], false, 2, null, shortIds)
+    expect(result).toHaveLength(2)
+    // 端数卓（2人）にp1,p2が含まれないことを確認
+    const partialTable = result.find(a => a.playerIds.length < 4)
+    if (partialTable) {
+      for (const pid of partialTable.playerIds) {
+        expect(shortIds.has(pid)).toBe(false)
+      }
+    }
+  })
+
+  it('shortPlayerIds=null → 通常動作', () => {
+    const tables = [{ id: 't1', size: 4 }]
+    const result = generateMatching(P.slice(0, 4), tables, P, [], false, 0, null, null)
+    expect(result).toHaveLength(1)
+    expect(result[0].playerIds).toHaveLength(4)
   })
 })

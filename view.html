@@ -479,7 +479,12 @@ const renderSeatBanner = () => {
   const query = searchName.trim().toLowerCase()
   if (!query || !tournamentData) { banner.classList.remove('show'); return }
   const { players = [], tables = [] } = tournamentData
-  const player = players.find(p => p.name.toLowerCase() === query) || players.find(p => p.name.toLowerCase().includes(query))
+  // 完全一致を優先。部分一致は1人だけの場合のみ表示
+  let player = players.find(p => p.name.toLowerCase() === query)
+  if (!player) {
+    const partial = players.filter(p => p.name.toLowerCase().includes(query))
+    player = partial.length === 1 ? partial[0] : null
+  }
   if (!player) { banner.classList.remove('show'); return }
   document.getElementById('seat-banner-name').textContent = player.name
   const table = tables.find(t => (t.playerIds || []).includes(player.id))

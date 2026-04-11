@@ -19,4 +19,40 @@ export default [
       'no-undef': 'error',
     },
   },
+  {
+    // 単体テストファイル
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        localStorage: 'readonly',
+        document:     'readonly',
+        MouseEvent:   'readonly',
+        describe:     'readonly',
+        it:           'readonly',
+        expect:       'readonly',
+        beforeEach:   'readonly',
+        afterEach:    'readonly',
+        vi:           'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': 'warn',
+      'no-undef': 'error',
+    },
+  },
+  {
+    // E2Eテストファイル
+    files: ['e2e/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        localStorage: 'readonly',
+        URL:           'readonly',
+        getComputedStyle: 'readonly',
+      },
+    },
+  },
 ]

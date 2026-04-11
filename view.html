@@ -204,6 +204,25 @@ body {
   animation: spin 0.8s linear infinite; margin: 0 auto 12px;
 }
 
+/* ── 座席バナー ───────────────────────── */
+.seat-banner {
+  margin: 0 16px 8px; padding: 10px 14px;
+  background: rgba(124,111,247,0.12); border: 1px solid var(--accent);
+  border-radius: var(--radius); display: none;
+}
+.seat-banner.show { display: block; }
+.seat-banner-label { font-size: 12px; color: var(--text-dim); }
+.seat-banner-table { font-size: 18px; font-weight: 800; color: var(--accent); }
+.seat-banner-status { font-size: 12px; color: var(--success); margin-left: 8px; }
+
+/* ── テーマ切替 ───────────────────────── */
+.btn-theme {
+  width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface2);
+  border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text); font-size: 16px; flex-shrink: 0;
+}
+.btn-theme:hover { background: var(--border); }
+
 /* ── トースト ─────────────────────────── */
 #toast {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -226,6 +245,7 @@ body {
   <div class="header-top">
     <span class="header-title" id="header-title">大会情報</span>
     <span class="header-status" id="header-status">接続中...</span>
+    <button class="btn-theme" id="btn-theme" title="テーマ切替">☀</button>
     <button class="btn-refresh" id="btn-refresh" title="更新">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
     </button>
@@ -240,6 +260,12 @@ body {
   <button class="tab active" data-tab="tables">テーブル</button>
   <button class="tab" data-tab="standings">順位表</button>
   <button class="tab" data-tab="history">対戦履歴</button>
+</div>
+
+<div class="seat-banner" id="seat-banner">
+  <span class="seat-banner-label">あなたの座席</span><br>
+  <span class="seat-banner-table" id="seat-banner-table"></span>
+  <span class="seat-banner-status" id="seat-banner-status"></span>
 </div>
 
 <div class="content">
@@ -356,9 +382,35 @@ const updateStatus = (state) => {
 // ── 描画 ─────────────────────────────────
 const render = () => {
   if (!tournamentData) return
+  // 大会名をヘッダーに反映
+  const tName = tournamentData.settings?.tournamentName
+  document.getElementById('header-title').textContent = tName || '大会情報'
+  document.title = tName || '大会情報'
+  // 座席バナー
+  renderSeatBanner()
   renderTables()
   renderStandings()
   renderHistory()
+}
+
+const renderSeatBanner = () => {
+  const banner = document.getElementById('seat-banner')
+  const query = searchName.trim().toLowerCase()
+  if (!query || !tournamentData) { banner.classList.remove('show'); return }
+  const { players = [], tables = [] } = tournamentData
+  const player = players.find(p => p.name.toLowerCase().includes(query))
+  if (!player) { banner.classList.remove('show'); return }
+  const table = tables.find(t => (t.playerIds || []).includes(player.id))
+  if (table) {
+    document.getElementById('seat-banner-table').textContent = table.label
+    document.getElementById('seat-banner-status').textContent = table.status === 'playing' ? '対戦中' : ''
+    banner.classList.add('show')
+  } else {
+    const status = player.status === 'waiting' ? '待機中' : player.status === 'excluded' ? '除外中' : ''
+    document.getElementById('seat-banner-table').textContent = status || '未配席'
+    document.getElementById('seat-banner-status').textContent = ''
+    banner.classList.add('show')
+  }
 }
 
 // ── テーブル一覧 ─────────────────────────
@@ -488,8 +540,9 @@ const renderHistory = () => {
     targetPlayer = players.find(p => p.name.toLowerCase().includes(query))
   }
 
-  // プレイヤー選択ドロップダウン
-  const options = players.map(p =>
+  // プレイヤー選択ドロップダウン（50音順）
+  const sortedPlayers = [...players].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'))
+  const options = sortedPlayers.map(p =>
     `<option value="${p.id}"${targetPlayer?.id === p.id ? ' selected' : ''}>${esc(p.name)}</option>`
   ).join('')
 
@@ -610,17 +663,24 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
   setTimeout(() => btn.classList.remove('spinning'), 600)
 })
 
-// ── テーマ検出 ───────────────────────────
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+// ── テーマ ──────────────────────────────
+let viewTheme = localStorage.getItem('view_theme') || ''  // '' = 管理者設定に従う
 const applyTheme = () => {
-  if (tournamentData?.settings?.theme) {
-    if (tournamentData.settings.theme === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light')
-    } else {
-      document.documentElement.removeAttribute('data-theme')
-    }
+  const theme = viewTheme || tournamentData?.settings?.theme || 'dark'
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light')
+    document.getElementById('btn-theme').textContent = '🌙'
+  } else {
+    document.documentElement.removeAttribute('data-theme')
+    document.getElementById('btn-theme').textContent = '☀'
   }
 }
+document.getElementById('btn-theme').addEventListener('click', () => {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light'
+  viewTheme = isLight ? 'dark' : 'light'
+  localStorage.setItem('view_theme', viewTheme)
+  applyTheme()
+})
 
 // ── 初期化 ──────────────────────────────
 if (tournamentId) {

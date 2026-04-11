@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大会情報</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c6ff7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect width='18' height='18' x='3' y='3' rx='2'/><path d='m16 8-4 4-4-4'/><path d='m16 16-4-4-4 4'/></svg>">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #12131a;
+  --surface:   #1c1d27;
+  --surface2:  #252639;
+  --border:    #2e3049;
+  --accent:    #7c6ff7;
+  --accent2:   #4fc3f7;
+  --success:   #43e97b;
+  --warning:   #f9a825;
+  --danger:    #ef5350;
+  --text:      #e2e4f0;
+  --text-dim:  #8b8eaa;
+  --radius:    10px;
+  --shadow:    0 4px 12px rgba(0,0,0,0.5);
+}
+[data-theme="light"] {
+  --bg:        #f0f1f5;
+  --surface:   #ffffff;
+  --surface2:  #e8e9f0;
+  --border:    #d0d1da;
+  --accent:    #6b5ce7;
+  --accent2:   #0288d1;
+  --success:   #2e8b57;
+  --warning:   #e68a00;
+  --danger:    #d32f2f;
+  --text:      #1a1b2e;
+  --text-dim:  #5a5d75;
+  --shadow:    0 4px 12px rgba(0,0,0,0.1);
+}
+
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: var(--bg); color: var(--text); font-size: 15px;
+}
+
+/* ── ヘッダー ──────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.header-top {
+  display: flex; align-items: center; gap: 10px;
+}
+.header-title { font-size: 16px; font-weight: 800; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.header-status { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.header-status.live { color: var(--success); }
+.btn-refresh {
+  width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface2);
+  border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text); font-size: 16px; flex-shrink: 0;
+}
+.btn-refresh:hover { background: var(--border); }
+.btn-refresh.spinning svg { animation: spin 0.6s linear; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 名前検索 ──────────────────────────── */
+.search-bar {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.search-input {
+  flex: 1; font-size: 16px; padding: 8px 12px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); outline: none;
+}
+.search-input:focus { border-color: var(--accent2); }
+.search-input::placeholder { color: var(--text-dim); }
+.search-clear {
+  width: 34px; height: 34px; border: none; background: transparent;
+  color: var(--text-dim); font-size: 18px; cursor: pointer; border-radius: 8px;
+  display: none; align-items: center; justify-content: center;
+}
+.search-clear.show { display: flex; }
+.search-clear:hover { background: var(--surface2); color: var(--text); }
+
+/* ── タブ ──────────────────────────────── */
+.tabs {
+  display: flex; gap: 0; padding: 0 16px; margin-top: 8px;
+  position: sticky; top: 0; z-index: 9;
+  background: var(--bg);
+}
+.tab {
+  flex: 1; padding: 10px 0; border: none; background: var(--surface2);
+  color: var(--text-dim); font-size: 13px; font-weight: 600;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:first-child { border-radius: 8px 0 0 0; }
+.tab:last-child { border-radius: 0 8px 0 0; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+
+/* ── コンテンツ ───────────────────────── */
+.content { padding: 12px 16px 80px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── テーブルカード ───────────────────── */
+.table-card {
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 10px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.table-card.playing { border-color: var(--success); }
+.table-card.empty { opacity: 0.5; }
+.table-card .card-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+.card-label { font-weight: 700; font-size: 15px; flex: 1; }
+.card-size { font-size: 12px; color: var(--text-dim); }
+.card-status {
+  font-size: 10px; font-weight: 700; padding: 2px 8px;
+  border-radius: 10px;
+}
+.card-status.playing { background: rgba(67,233,123,0.15); color: var(--success); }
+.card-status.empty { background: var(--surface2); color: var(--text-dim); }
+
+.card-players { padding: 8px 12px; }
+.card-player {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 0; font-size: 14px;
+}
+.card-player.highlight {
+  background: rgba(124,111,247,0.15); border-radius: 6px;
+  padding: 4px 8px; margin: 2px -8px; font-weight: 700;
+  color: var(--accent);
+}
+.card-player-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.group-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 5px;
+  border-radius: 4px; background: var(--bg); color: var(--accent);
+  min-width: 20px; text-align: center;
+}
+.bracket-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 5px;
+  border-radius: 4px; background: rgba(249,168,37,.15); color: var(--warning);
+  min-width: 20px; text-align: center;
+}
+.score-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 5px;
+  border-radius: 4px; background: rgba(249,168,37,.15); color: var(--warning);
+}
+.empty-slot { color: var(--text-dim); font-size: 13px; opacity: 0.5; }
+
+/* ── 順位表 ──────────────────────────── */
+.standings-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.standings-table th {
+  padding: 6px 8px; font-size: 11px; color: var(--text-dim);
+  border-bottom: 2px solid var(--border); text-align: left;
+}
+.standings-table th:first-child { text-align: center; width: 32px; }
+.standings-table th:last-child { text-align: right; }
+.standings-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.standings-table td:first-child { text-align: center; color: var(--text-dim); }
+.standings-table td:last-child { text-align: right; font-weight: 700; color: var(--warning); }
+.standings-table tr.highlight td { background: rgba(124,111,247,0.1); }
+
+/* ── 対戦履歴 ─────────────────────────── */
+.history-player-select {
+  width: 100%; font-size: 16px; padding: 8px 12px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); margin-bottom: 12px; outline: none;
+}
+.history-player-select:focus { border-color: var(--accent2); }
+.history-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+}
+.history-name { flex: 1; font-size: 14px; }
+.history-count { font-size: 12px; color: var(--text-dim); }
+.history-section-title {
+  font-size: 12px; font-weight: 700; color: var(--warning);
+  margin: 12px 0 6px; padding-top: 8px; border-top: 1px solid var(--border);
+}
+.history-match {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0; border-bottom: 1px solid var(--surface2); font-size: 13px;
+}
+.history-match-table { font-size: 11px; color: var(--text-dim); width: 60px; flex-shrink: 0; }
+.history-match-players { flex: 1; }
+
+/* ── ローディング/エラー ─────────────── */
+.loading, .error-msg, .empty-msg {
+  text-align: center; padding: 40px 20px;
+  color: var(--text-dim); font-size: 14px;
+}
+.error-msg { color: var(--danger); }
+.loading-spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+}
+
+/* ── トースト ─────────────────────────── */
+#toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 13px; padding: 8px 18px;
+  border-radius: 20px; box-shadow: var(--shadow);
+  z-index: 4000; opacity: 0; transition: opacity .2s;
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="header-title" id="header-title">大会情報</span>
+    <span class="header-status" id="header-status">接続中...</span>
+    <button class="btn-refresh" id="btn-refresh" title="更新">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+    </button>
+  </div>
+  <div class="search-bar">
+    <input type="text" class="search-input" id="search-input" placeholder="名前で検索..." autocomplete="off">
+    <button class="search-clear" id="search-clear">×</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tables">テーブル</button>
+  <button class="tab" data-tab="standings">順位表</button>
+  <button class="tab" data-tab="history">対戦履歴</button>
+</div>
+
+<div class="content">
+  <div class="tab-panel active" id="panel-tables"></div>
+  <div class="tab-panel" id="panel-standings"></div>
+  <div class="tab-panel" id="panel-history"></div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+// ── Supabase設定 ───────────────────────────
+const SUPABASE_URL = 'https://ufmjvdytyldpqlhgxzfm.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_BR3vLJ4Vlfm1QmGqa-kY6Q_Q7jkXcS1'
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+// ── 大会ID取得 ─────────────────────────────
+const params = new URLSearchParams(location.search)
+const tournamentId = params.get('id')
+
+if (!tournamentId) {
+  document.querySelector('.content').innerHTML = '<div class="error-msg">大会IDが指定されていません。<br>管理者から共有されたURLでアクセスしてください。</div>'
+  document.querySelector('.tabs').style.display = 'none'
+}
+
+// ── 状態 ───────────────────────────────────
+let tournamentData = null
+let searchName = localStorage.getItem('view_search_name') || ''
+
+const esc = str => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+
+// ── トースト ──────────────────────────────
+const toast = msg => {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.classList.add('show')
+  clearTimeout(el._t)
+  el._t = setTimeout(() => el.classList.remove('show'), 2200)
+}
+
+// ── データ取得 ────────────────────────────
+const fetchData = async () => {
+  if (!tournamentId) return
+  try {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('data, updated_at')
+      .eq('id', tournamentId)
+      .single()
+
+    if (error) throw error
+    if (!data) {
+      document.querySelector('.content').innerHTML = '<div class="error-msg">大会が見つかりません。<br>URLが正しいか確認してください。</div>'
+      return
+    }
+    tournamentData = data.data
+    tournamentData._updatedAt = data.updated_at
+    render()
+    updateStatus('live')
+  } catch (e) {
+    console.error('Fetch error:', e)
+    updateStatus('error')
+    if (!tournamentData) {
+      document.querySelector('.content').innerHTML = '<div class="error-msg">データの取得に失敗しました。<br>しばらく待ってから更新してください。</div>'
+    }
+  }
+}
+
+// ── Realtime購読 ─────────────────────────
+const subscribeRealtime = () => {
+  if (!tournamentId) return
+  supabase
+    .channel('tournament-' + tournamentId)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'tournaments',
+      filter: `id=eq.${tournamentId}`
+    }, payload => {
+      tournamentData = payload.new.data
+      tournamentData._updatedAt = payload.new.updated_at
+      render()
+      updateStatus('live')
+    })
+    .subscribe()
+}
+
+// ── フォールバック: 30秒ポーリング ───────
+let pollTimer = null
+const startPolling = () => {
+  pollTimer = setInterval(fetchData, 30000)
+}
+
+// ── ステータス表示 ───────────────────────
+const updateStatus = (state) => {
+  const el = document.getElementById('header-status')
+  if (state === 'live') {
+    const t = tournamentData?._updatedAt
+    const timeStr = t ? new Date(t).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''
+    el.textContent = `最終更新 ${timeStr}`
+    el.className = 'header-status live'
+  } else if (state === 'error') {
+    el.textContent = '接続エラー'
+    el.className = 'header-status'
+    el.style.color = 'var(--danger)'
+  } else {
+    el.textContent = '接続中...'
+    el.className = 'header-status'
+  }
+}
+
+// ── 描画 ─────────────────────────────────
+const render = () => {
+  if (!tournamentData) return
+  renderTables()
+  renderStandings()
+  renderHistory()
+}
+
+// ── テーブル一覧 ─────────────────────────
+const renderTables = () => {
+  const panel = document.getElementById('panel-tables')
+  const { players = [], tables = [], settings = {} } = tournamentData
+  const bracketOn = !!settings.enableBracket
+  const query = searchName.trim().toLowerCase()
+
+  if (!tables.length) {
+    panel.innerHTML = '<div class="empty-msg">テーブルがまだ登録されていません</div>'
+    return
+  }
+
+  // 対戦中テーブルを先に表示
+  const sorted = [...tables].sort((a, b) => {
+    if (a.status === 'playing' && b.status !== 'playing') return -1
+    if (a.status !== 'playing' && b.status === 'playing') return 1
+    return 0
+  })
+
+  let html = ''
+  sorted.forEach(t => {
+    const isPlaying = t.status === 'playing'
+    const seated = (t.playerIds || []).map(id => players.find(p => p.id === id)).filter(Boolean)
+
+    const statusHtml = isPlaying
+      ? '<span class="card-status playing">対戦中</span>'
+      : '<span class="card-status empty">空き</span>'
+
+    let playersHtml = ''
+    if (seated.length) {
+      playersHtml = seated.map(p => {
+        const isMatch = query && p.name.toLowerCase().includes(query)
+        const brk = bracketOn && p.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
+        const grp = p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
+        return `<div class="card-player${isMatch ? ' highlight' : ''}">
+          <span class="card-player-name">${esc(p.name)}</span>${brk}${grp}
+        </div>`
+      }).join('')
+    } else {
+      playersHtml = Array.from({ length: t.size }, (_, i) =>
+        `<div class="card-player empty-slot">- 空席 ${i + 1}</div>`
+      ).join('')
+    }
+
+    html += `
+    <div class="table-card${isPlaying ? ' playing' : ' empty'}">
+      <div class="card-header">
+        <span class="card-label">${esc(t.label)}</span>
+        <span class="card-size">${t.size}人</span>
+        ${statusHtml}
+      </div>
+      <div class="card-players">${playersHtml}</div>
+    </div>`
+  })
+  panel.innerHTML = html
+}
+
+// ── 順位表 ──────────────────────────────
+const renderStandings = () => {
+  const panel = document.getElementById('panel-standings')
+  const { players = [], matches = [], settings = {} } = tournamentData
+  const query = searchName.trim().toLowerCase()
+
+  // VP集計
+  const scoreMap = {}
+  matches.forEach(m => {
+    if (!m.scores) return
+    Object.entries(m.scores).forEach(([pid, vp]) => {
+      scoreMap[pid] = (scoreMap[pid] ?? 0) + (vp ?? 0)
+    })
+  })
+
+  // 対戦回数集計
+  const matchCount = {}
+  matches.forEach(m => {
+    m.playerIds.forEach(pid => { matchCount[pid] = (matchCount[pid] ?? 0) + 1 })
+  })
+
+  const hasScores = Object.keys(scoreMap).length > 0
+
+  const rows = players
+    .filter(p => !['excluded','break','left'].includes(p.status))
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      group: p.group,
+      score: scoreMap[p.id] ?? 0,
+      games: matchCount[p.id] ?? 0,
+    }))
+    .sort((a, b) => b.score - a.score || b.games - a.games)
+
+  if (!rows.length) {
+    panel.innerHTML = '<div class="empty-msg">プレイヤーがまだ登録されていません</div>'
+    return
+  }
+
+  const headerScore = hasScores ? '<th style="text-align:right;">点数</th>' : ''
+  const tableRows = rows.map((r, i) => {
+    const isMatch = query && r.name.toLowerCase().includes(query)
+    const grp = r.group ? ` <span class="group-badge">${esc(r.group)}</span>` : ''
+    const score = hasScores ? `<td>${r.score}pt</td>` : ''
+    return `<tr class="${isMatch ? 'highlight' : ''}">
+      <td>${i + 1}</td>
+      <td>${esc(r.name)}${grp}</td>
+      ${score}
+    </tr>`
+  }).join('')
+
+  panel.innerHTML = `
+    <table class="standings-table">
+      <thead><tr><th>#</th><th>名前</th>${headerScore}</tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>`
+}
+
+// ── 対戦履歴 ─────────────────────────────
+const renderHistory = () => {
+  const panel = document.getElementById('panel-history')
+  const { players = [], matches = [], tables = [] } = tournamentData
+  const query = searchName.trim().toLowerCase()
+
+  // 検索名に一致するプレイヤーを自動選択
+  let targetPlayer = null
+  if (query) {
+    targetPlayer = players.find(p => p.name.toLowerCase().includes(query))
+  }
+
+  // プレイヤー選択ドロップダウン
+  const options = players.map(p =>
+    `<option value="${p.id}"${targetPlayer?.id === p.id ? ' selected' : ''}>${esc(p.name)}</option>`
+  ).join('')
+
+  let historyHtml = '<select class="history-player-select" id="history-select"><option value="">プレイヤーを選択...</option>' + options + '</select>'
+
+  const selectedId = targetPlayer?.id || ''
+  if (selectedId) {
+    const myMatches = matches.filter(m => m.playerIds.includes(selectedId))
+
+    // 対戦相手集計
+    const countMap = {}
+    myMatches.forEach(m => {
+      m.playerIds.forEach(pid => {
+        if (pid === selectedId) return
+        countMap[pid] = (countMap[pid] ?? 0) + 1
+      })
+    })
+
+    const opponentRows = Object.entries(countMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([pid, cnt]) => {
+        const op = players.find(x => x.id === pid)
+        const name = op ? esc(op.name) : '<span style="color:var(--text-dim)">(退出済み)</span>'
+        const grp = op?.group ? `<span class="group-badge">${esc(op.group)}</span>` : ''
+        return `<div class="history-item"><span class="history-name">${name}${grp}</span><span class="history-count">${cnt}回</span></div>`
+      }).join('')
+
+    // 対戦ごと詳細
+    const matchDetail = myMatches.slice().reverse().map(m => {
+      const tbl = tables.find(t => t.id === m.tableId)
+      const opponents = m.playerIds
+        .filter(pid => pid !== selectedId)
+        .map(pid => players.find(x => x.id === pid)?.name ?? '?')
+        .join(', ')
+      const vp = m.scores?.[selectedId]
+      const vpStr = vp != null ? `<span class="score-badge">${vp}pt</span>` : ''
+      return `<div class="history-match">
+        <span class="history-match-table">${esc(tbl?.label ?? '?')}</span>
+        <span class="history-match-players">${esc(opponents)}</span>
+        ${vpStr}
+      </div>`
+    }).join('')
+
+    historyHtml += `
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
+        対戦回数：${myMatches.length}回 ／ 対戦相手：${Object.keys(countMap).length}人
+      </p>`
+
+    if (matchDetail) {
+      historyHtml += `<div class="history-section-title">対戦ごとの詳細</div>${matchDetail}`
+    }
+    if (opponentRows) {
+      historyHtml += `<div class="history-section-title">対戦相手</div>${opponentRows}`
+    }
+
+    if (!myMatches.length) {
+      historyHtml += '<div class="empty-msg" style="padding:20px 0;">まだ対戦履歴がありません</div>'
+    }
+  } else {
+    historyHtml += '<div class="empty-msg" style="padding:20px 0;">プレイヤーを選択するか、<br>上の検索欄に名前を入力してください</div>'
+  }
+
+  panel.innerHTML = historyHtml
+
+  // ドロップダウン変更イベント
+  document.getElementById('history-select')?.addEventListener('change', e => {
+    const pid = e.target.value
+    if (pid) {
+      const p = players.find(x => x.id === pid)
+      if (p) {
+        searchName = p.name
+        document.getElementById('search-input').value = p.name
+        localStorage.setItem('view_search_name', searchName)
+        render()
+      }
+    }
+  })
+}
+
+// ── タブ切替 ─────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'))
+    tab.classList.add('active')
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active')
+  })
+})
+
+// ── 名前検索 ─────────────────────────────
+const searchInput = document.getElementById('search-input')
+const searchClear = document.getElementById('search-clear')
+searchInput.value = searchName
+
+searchInput.addEventListener('input', () => {
+  searchName = searchInput.value
+  localStorage.setItem('view_search_name', searchName)
+  searchClear.classList.toggle('show', !!searchName)
+  render()
+})
+
+searchClear.addEventListener('click', () => {
+  searchName = ''
+  searchInput.value = ''
+  localStorage.setItem('view_search_name', '')
+  searchClear.classList.remove('show')
+  render()
+})
+
+if (searchName) searchClear.classList.add('show')
+
+// ── 手動更新 ─────────────────────────────
+document.getElementById('btn-refresh').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-refresh')
+  btn.classList.add('spinning')
+  await fetchData()
+  toast('更新しました')
+  setTimeout(() => btn.classList.remove('spinning'), 600)
+})
+
+// ── テーマ検出 ───────────────────────────
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+const applyTheme = () => {
+  if (tournamentData?.settings?.theme) {
+    if (tournamentData.settings.theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light')
+    } else {
+      document.documentElement.removeAttribute('data-theme')
+    }
+  }
+}
+
+// ── 初期化 ──────────────────────────────
+if (tournamentId) {
+  // ローディング表示
+  document.getElementById('panel-tables').innerHTML = '<div class="loading"><div class="loading-spinner"></div>データを読み込み中...</div>'
+
+  fetchData().then(() => {
+    applyTheme()
+  })
+  subscribeRealtime()
+  startPolling()
+}
+</script>
+</body>
+</html>

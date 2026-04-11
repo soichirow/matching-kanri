@@ -1400,10 +1400,10 @@ const renderPlayers = () => {
     const hasTables = getTables().length > 0
     list.innerHTML = `<div class="empty-hint" style="line-height:1.8;">
       ${hasTables
-        ? '上の <strong>＋人</strong> ボタンでプレイヤーを追加してください'
+        ? '上の <strong>＋プレイヤー</strong> ボタンでプレイヤーを追加してください'
         : `<strong>はじめかた</strong><br>
-           ① 上の <strong>＋卓</strong> でテーブルを追加<br>
-           ② <strong>＋人</strong> でプレイヤーを追加<br>
+           ① 上の <strong>＋テーブル</strong> でテーブルを追加<br>
+           ② <strong>＋プレイヤー</strong> でプレイヤーを追加<br>
            ③ 下の <strong>マッチング</strong> ボタンで開始`}
     </div>`
     return

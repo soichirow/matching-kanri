@@ -987,7 +987,23 @@ const findBestGroup = (players, size, allPlayers, matches, vpMap = null) => {
   return result
 }
 
-const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0, vpMap = null) => {
+// 直近の対戦が規定人数未満だったプレイヤーを返す
+const getShortMatchPlayerIds = (matches, tables) => {
+  const ids = new Set()
+  const lastMatch = {}
+  matches.forEach(m => {
+    m.playerIds.forEach(pid => {
+      if (!lastMatch[pid] || m.timestamp > lastMatch[pid].timestamp) lastMatch[pid] = m
+    })
+  })
+  Object.entries(lastMatch).forEach(([pid, m]) => {
+    const t = tables.find(x => x.id === m.tableId)
+    if (t && m.playerIds.length < t.size) ids.add(pid)
+  })
+  return ids
+}
+
+const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0, vpMap = null, shortPlayerIds = null) => {
   if (!waitingPlayers.length || !emptyTables.length) return []
   let pool = shuffle ? shuffleArray(waitingPlayers) : [...waitingPlayers]
 
@@ -1013,7 +1029,15 @@ const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuf
   for (const table of orderedTables) {
     const actualSize = Math.min(pool.length, table.size)
     if (actualSize < 1) continue
-    const best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap)
+    let best = null
+    // 規定人数未満の卓では、前回もショートだったプレイヤーを避ける
+    if (shortPlayerIds && actualSize < table.size) {
+      const nonShortPool = pool.filter(p => !shortPlayerIds.has(p.id))
+      if (nonShortPool.length >= actualSize) {
+        best = findBestGroup(nonShortPool, actualSize, allPlayers, matches, vpMap)
+      }
+    }
+    if (!best) best = findBestGroup(pool, actualSize, allPlayers, matches, vpMap)
     if (!best) continue
     assignments.push({ tableId: table.id, playerIds: best })
     pool = pool.filter(p => !best.includes(p.id))
@@ -1600,6 +1624,7 @@ const doGenerateMatching = (shuffle = false) => {
   const minFill = assignLeftover ? 1 : (settings.minFill ?? 0)
   const vpMap = (settings.enableVP && settings.vpMatching) ? buildVpMap(matches) : null
   const shouldShuffle = shuffle || matches.length === 0  // 初回は常にシャッフル
+  const shortPlayerIds = settings.avoidShort ? getShortMatchPlayerIds(matches, allTables) : null
 
   // ブラケット機能：同じブラケット内でのみマッチング
   if (settings.enableBracket) {
@@ -1615,7 +1640,7 @@ const doGenerateMatching = (shuffle = false) => {
     for (const key of keys) {
       const pool = bracketMap[key]
       if (!remainingTables.length) break
-      const result = generateMatching(pool, remainingTables, allPlayers, matches, shouldShuffle, minFill, vpMap)
+      const result = generateMatching(pool, remainingTables, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
       result.forEach(m => {
         pendingMatches.push(m)
         const idx = remainingTables.findIndex(t => t.id === m.tableId)
@@ -1623,7 +1648,7 @@ const doGenerateMatching = (shuffle = false) => {
       })
     }
   } else {
-    pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap)
+    pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
   }
 
   if (!pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
@@ -2039,6 +2064,15 @@ document.addEventListener('DOMContentLoaded', () => {
        </div>
        <div class="dlg-field">
          <label style="cursor:pointer;">
+           <input type="checkbox" id="dlg-avoid-short" ${s.avoidShort ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
+           少人数卓の連続を避ける
+         </label>
+         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 22px;">
+           前回テーブルの最大人数に満たなかったプレイヤーを、今回のショート卓に入りにくくします。
+         </p>
+       </div>
+       <div class="dlg-field">
+         <label style="cursor:pointer;">
            <input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''} style="accent-color:var(--accent);margin-right:6px;">
            点数を記録する
          </label>
@@ -2090,10 +2124,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const v = parseInt(document.getElementById('dlg-min-fill')?.value ?? '0', 10)
       const showRound = !!document.getElementById('dlg-show-round')?.checked
       const enableBracket = !!document.getElementById('dlg-enable-bracket')?.checked
+      const avoidShort = !!document.getElementById('dlg-avoid-short')?.checked
       const enableVP = !!document.getElementById('dlg-enable-vp')?.checked
       const vpMatching = enableVP && !!document.getElementById('dlg-vp-matching')?.checked
       const theme = document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark'
-      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, enableVP, vpMatching, theme })
+      saveSettings({ ...getSettings(), minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, avoidShort, enableVP, vpMatching, theme })
       applyTheme(theme)
       render()
       toast('設定を保存しました')

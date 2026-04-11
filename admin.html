@@ -200,7 +200,7 @@ body {
 }
 
 .score-input {
-  width: 52px; font-size: 14px; padding: 4px 6px;
+  width: 52px; font-size: 16px; padding: 4px 6px;
   border: 1px solid var(--border); border-radius: 5px;
   background: var(--bg); color: var(--text);
   text-align: center; font-weight: 600;
@@ -1912,7 +1912,7 @@ document.addEventListener('DOMContentLoaded', () => {
              <button type="button" class="dlg-pill active" data-val="">なし</button>
              ${['A','B','C','D','E'].map(g => `<button type="button" class="dlg-pill" data-val="${g}">${g}</button>`).join('')}
            </div>
-           <input type="text" id="dlg-group-custom" placeholder="またはグループ名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+           <input type="text" id="dlg-group-custom" placeholder="またはグループ名" style="width:120px;font-size:16px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
        </div>
        ${bracketOn ? `<div class="dlg-field">
@@ -1922,7 +1922,7 @@ document.addEventListener('DOMContentLoaded', () => {
              <button type="button" class="dlg-pill active" data-val="">なし</button>
              ${[...new Set(['1','2','3','4','5', ...existingBrackets])].map(b => `<button type="button" class="dlg-pill" data-val="${esc(b)}">${esc(b)}</button>`).join('')}
            </div>
-           <input type="text" id="dlg-bracket-custom" placeholder="新規ブラケット名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+           <input type="text" id="dlg-bracket-custom" placeholder="新規ブラケット名" style="width:120px;font-size:16px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
        </div>` : ''}
        <div id="dlg-add-count-msg" style="font-size:12px;color:var(--success);min-height:18px;"></div>`,
@@ -1959,7 +1959,7 @@ document.addEventListener('DOMContentLoaded', () => {
              <button type="button" class="dlg-pill${!p.group || 'ABCDE'.includes(p.group) ? (!p.group ? ' active' : '') : ''}" data-val="">なし</button>
              ${pills}
            </div>
-           <input type="text" id="dlg-group-custom-edit" placeholder="またはグループ名" value="${p.group && !'ABCDE'.includes(p.group) ? esc(p.group) : ''}" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+           <input type="text" id="dlg-group-custom-edit" placeholder="またはグループ名" value="${p.group && !'ABCDE'.includes(p.group) ? esc(p.group) : ''}" style="width:120px;font-size:16px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
        </div>
        ${bracketOn ? `<div class="dlg-field">
@@ -1970,7 +1970,7 @@ document.addEventListener('DOMContentLoaded', () => {
              <button type="button" class="dlg-pill${!p.bracket ? ' active' : ''}" data-val="">なし</button>
              ${[...new Set(['1','2','3','4','5', ...existingBrackets])].map(b => `<button type="button" class="dlg-pill${p.bracket === b ? ' active' : ''}" data-val="${esc(b)}">${esc(b)}</button>`).join('')}
            </div>
-           <input type="text" id="dlg-bracket-custom-edit" placeholder="新規ブラケット名" value="${p.bracket && !existingBrackets.includes(p.bracket) ? esc(p.bracket) : ''}" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+           <input type="text" id="dlg-bracket-custom-edit" placeholder="新規ブラケット名" value="${p.bracket && !existingBrackets.includes(p.bracket) ? esc(p.bracket) : ''}" style="width:120px;font-size:16px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
        </div>` : ''}`,
       `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
@@ -2701,7 +2701,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `<div style="display:flex;flex-direction:column;gap:8px;">
            <div style="display:flex;align-items:center;gap:8px;">
              <span style="font-size:13px;"><i data-lucide="users" style="width:14px;height:14px;"></i> 人数</span>
-             <select id="dlg-tm-size-sel" style="font-size:14px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
+             <select id="dlg-tm-size-sel" style="font-size:16px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
                ${[2,3,4,5,6,7,8].map(n => `<option value="${n}"${n===tbl.size?' selected':''}>${n}人</option>`).join('')}
              </select>
            </div>

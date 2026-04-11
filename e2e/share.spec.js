@@ -20,10 +20,10 @@ test('設定画面にイベント共有セクションが表示される', async
 })
 
 test('イベント共有ボタンでイベントIDが発行される', async ({ page }) => {
-  // プレイヤー追加
-  await page.selectOption('#quick-add-count', '4')
-  await page.click('#btn-quick-add')
+  // プレイヤー追加（ダイアログ経由）
+  await page.click('#btn-add-players')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-player-count-pills .dlg-pill[data-val="4"]')
   await page.click('#dlg-ok')
   await expect(page.locator('.player-item')).toHaveCount(4)
 
@@ -46,10 +46,10 @@ test('イベント共有ボタンでイベントIDが発行される', async ({ 
 })
 
 test('共有後のview.htmlにデータが表示される', async ({ page, context }) => {
-  // セットアップ: 4人追加
-  await page.selectOption('#quick-add-count', '4')
-  await page.click('#btn-quick-add')
+  // セットアップ: 4人追加（ダイアログ経由）
+  await page.click('#btn-add-players')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-player-count-pills .dlg-pill[data-val="4"]')
   await page.click('#dlg-ok')
   await expect(page.locator('.player-item')).toHaveCount(4)
 

@@ -689,25 +689,8 @@ body {
   <header class="app-header">
     <span class="header-title" id="header-title">マッチング管理</span>
     <div class="header-actions">
-      <select id="quick-add-table-count" class="quick-select" aria-label="テーブル数">
-        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-        <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
-        <option value="8">8</option><option value="10">10</option><option value="12">12</option>
-        <option value="16">16</option><option value="20">20</option>
-      </select>
-      <select id="quick-add-table-size" class="quick-select" aria-label="テーブル人数">
-        <option value="2">2人</option><option value="3">3人</option><option value="4" selected>4人</option>
-        <option value="5">5人</option><option value="6">6人</option><option value="7">7人</option><option value="8">8人</option>
-      </select>
-      <button class="panel-add-btn" id="btn-quick-add-tables">＋卓</button>
-      <span class="panel-sep"></span>
-      <select id="quick-add-count" class="quick-select" aria-label="プレイヤー数">
-        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-        <option value="8">8</option><option value="10" selected>10</option><option value="12">12</option>
-        <option value="16">16</option><option value="20">20</option><option value="30">30</option><option value="50">50</option>
-      </select>
-      <button class="panel-add-btn" id="btn-quick-add">＋人</button>
+      <button class="panel-add-btn" id="btn-add-tables">＋テーブル</button>
+      <button class="panel-add-btn" id="btn-add-players">＋プレイヤー</button>
       <button class="panel-tool-btn" id="btn-open-paste" title="Excelから一括入力" aria-label="Excelから一括入力"><i data-lucide="clipboard-list"></i></button>
       <span style="flex:1;"></span>
       <button id="btn-standings"     class="btn btn-monitor" title="順位表" aria-label="順位表" style="padding:6px 10px;"><i data-lucide="trophy"></i></button>
@@ -1954,27 +1937,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // 人数で一括追加（インライン）
-  const doQuickAddPlayers = async () => {
-    const count = parseInt(document.getElementById('quick-add-count')?.value ?? '0', 10)
-    if (!count || count < 1) return
-    if (count === 1) { dlgAddPlayer(); return }
-    if (!await dlgConfirm(`プレイヤーを${count}人追加しますか？`, '追加', 'btn-ok-add')) return
-    const existing = new Set(getPlayers().map(p => p.name))
-    let maxNum = 0
-    existing.forEach(name => {
-      const m = name.match(/^プレイヤー(\d+)$/)
-      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
-    })
-    let added = 0
-    for (let i = 0; i < count; i++) {
-      const num = maxNum + 1 + i
-      const name = 'プレイヤー' + String(num).padStart(2, '0')
-      if (!existing.has(name)) { addPlayer(name, null); existing.add(name); added++ }
-    }
-    scheduleRender()
-    toast(`${added}人追加しました`)
-  }
 
   // プレイヤー編集ダイアログ
   const dlgEditPlayer = id => {
@@ -2643,14 +2605,27 @@ document.addEventListener('DOMContentLoaded', () => {
     `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>`
   ))
 
-  document.getElementById('btn-quick-add').addEventListener('click', doQuickAddPlayers)
-
-  const doQuickAddTables = async () => {
-    const count = parseInt(document.getElementById('quick-add-table-count')?.value ?? '0', 10)
-    const size = parseInt(document.getElementById('quick-add-table-size')?.value ?? '4', 10)
-    if (!count || count < 1) return
-    if (count === 1) { dlgAddTable(); return }
-    if (!await dlgConfirm(`${size}人卓を${count}卓追加しますか？`, '追加', 'btn-ok-add')) return
+  // ── テーブル追加ダイアログ ───────────────────────────────
+  const dlgQuickAddTables = () => _openDlg(
+    'テーブルを追加',
+    `<div class="dlg-field">
+       <label>追加する卓数</label>
+       <div class="dlg-pills" id="dlg-table-count-pills">
+         ${[1,2,3,4,5,6,8,10].map(n => `<button type="button" class="dlg-pill${n===4?' active':''}" data-val="${n}">${n}</button>`).join('')}
+       </div>
+     </div>
+     <div class="dlg-field">
+       <label>対戦人数</label>
+       <div class="dlg-pills" id="dlg-table-size-pills">
+         ${[2,3,4,5,6,7,8].map(n => `<button type="button" class="dlg-pill${n===4?' active':''}" data-val="${n}">${n}人</button>`).join('')}
+       </div>
+     </div>`,
+    `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
+     <button class="btn btn-ok-add"  id="dlg-ok">追加</button>`
+  ).then(ok => {
+    if (!ok) return
+    const count = Number(document.querySelector('#dlg-table-count-pills .dlg-pill.active')?.dataset.val ?? 4)
+    const size  = Number(document.querySelector('#dlg-table-size-pills .dlg-pill.active')?.dataset.val ?? 4)
     const existing = new Set(getTables().map(t => t.label))
     let maxNum = 0
     existing.forEach(label => {
@@ -2665,9 +2640,42 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!existing.has(label)) { addTable(label, size); existing.add(label); added++ }
     }
     scheduleRender()
-    toast(`${size}人卓を${added}卓追加しました`)
-  }
-  document.getElementById('btn-quick-add-tables').addEventListener('click', doQuickAddTables)
+    if (added) toast(`${size}人卓を${added}卓追加しました`)
+  })
+  document.getElementById('btn-add-tables').addEventListener('click', dlgQuickAddTables)
+
+  // ── プレイヤー追加ダイアログ ───────────────────────────────
+  const dlgQuickAddPlayers = () => _openDlg(
+    'プレイヤーを追加',
+    `<div class="dlg-field">
+       <label>追加する人数</label>
+       <div class="dlg-pills" id="dlg-player-count-pills">
+         ${[1,2,3,4,5,6,8,10,16,20].map(n => `<button type="button" class="dlg-pill${n===10?' active':''}" data-val="${n}">${n}</button>`).join('')}
+       </div>
+     </div>
+     <p style="font-size:12px;color:var(--text-dim);margin:8px 0 0;">1人の場合は名前・グループを個別入力できます</p>`,
+    `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
+     <button class="btn btn-ok-add"  id="dlg-ok">追加</button>`
+  ).then(ok => {
+    if (!ok) return
+    const count = Number(document.querySelector('#dlg-player-count-pills .dlg-pill.active')?.dataset.val ?? 10)
+    if (count === 1) { dlgAddPlayer(); return }
+    const existing = new Set(getPlayers().map(p => p.name))
+    let maxNum = 0
+    existing.forEach(name => {
+      const m = name.match(/^プレイヤー(\d+)$/)
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
+    })
+    let added = 0
+    for (let i = 0; i < count; i++) {
+      const num = maxNum + 1 + i
+      const name = 'プレイヤー' + String(num).padStart(2, '0')
+      if (!existing.has(name)) { addPlayer(name, null); existing.add(name); added++ }
+    }
+    scheduleRender()
+    if (added) toast(`${added}人追加しました`)
+  })
+  document.getElementById('btn-add-players').addEventListener('click', dlgQuickAddPlayers)
   const canvas = document.getElementById('canvas')
   canvas.addEventListener('click', e => {
     const btn = e.target.closest('[data-action]')

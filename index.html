@@ -958,12 +958,13 @@ const _syncDebounce = () => {
 
 const _syncNow = async () => {
   const s = getSettings()
-  if (!s.shareId || !_supabase) return false
+  if (!s.shareId || !s.shareAdminKey || !_supabase) return false
   try {
-    const { error } = await _supabase
-      .from('tournaments')
-      .update({ data: _buildShareData(), updated_at: new Date().toISOString() })
-      .eq('id', s.shareId)
+    const { error } = await _supabase.rpc('update_tournament', {
+      p_id: s.shareId,
+      p_admin_key: s.shareAdminKey,
+      p_data: _buildShareData()
+    })
     if (error) { console.error('Sync error:', error); return false }
     saveSettings({ ...getSettings(), shareLastSync: Date.now() })
     return true
@@ -2234,9 +2235,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 大会共有ボタン ──
     if (e.target.closest('#dlg-share-start')) {
       (async () => {
-        const { data, error } = await _supabase.from('tournaments').insert({ data: _buildShareData() }).select('id').single()
+        const adminKey = crypto.randomUUID()
+        const { data: newId, error } = await _supabase.rpc('create_tournament', { p_data: _buildShareData(), p_admin_key: adminKey })
         if (error) { toast('共有の開始に失敗しました'); console.error(error); return }
-        saveSettings({ ...getSettings(), shareId: data.id, shareSync: true, shareLastSync: Date.now() })
+        saveSettings({ ...getSettings(), shareId: newId, shareAdminKey: adminKey, shareSync: true, shareLastSync: Date.now() })
         _closeDlg(null)
         toast('大会を共有しました！')
         render()
@@ -2267,10 +2269,10 @@ document.addEventListener('DOMContentLoaded', () => {
         dlgConfirm('大会の共有を停止しますか？<br><small>参加者はURLにアクセスできなくなります。</small>', '停止', 'btn-del').then(ok => {
           if (!ok) return
           const s = getSettings()
-          if (s.shareId) {
-            _supabase.from('tournaments').delete().eq('id', s.shareId).then(() => {})
+          if (s.shareId && s.shareAdminKey) {
+            _supabase.rpc('delete_tournament', { p_id: s.shareId, p_admin_key: s.shareAdminKey }).then(() => {})
           }
-          saveSettings({ ...getSettings(), shareId: null, shareSync: false, shareLastSync: null })
+          saveSettings({ ...getSettings(), shareId: null, shareAdminKey: null, shareSync: false, shareLastSync: null })
           toast('共有を停止しました')
           render()
         })

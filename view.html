@@ -90,6 +90,22 @@ body {
 .search-clear.show { display: flex; }
 .search-clear:hover { background: var(--surface2); color: var(--text); }
 
+/* ── 検索候補 ─────────────────────────── */
+.search-suggestions {
+  position: absolute; top: 100%; left: 0; right: 44px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto;
+  z-index: 20; display: none;
+}
+.search-suggestions.show { display: block; }
+.search-suggestion {
+  padding: 10px 12px; font-size: 14px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.search-suggestion:last-child { border-bottom: none; }
+.search-suggestion:hover, .search-suggestion.active { background: var(--surface2); }
+.search-suggestion mark { background: transparent; color: var(--accent); font-weight: 700; }
+
 /* ── タブ ──────────────────────────────── */
 .tabs {
   display: flex; gap: 0; padding: 0 16px; margin-top: 8px;
@@ -259,9 +275,10 @@ body {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
     </button>
   </div>
-  <div class="search-bar">
+  <div class="search-bar" style="position:relative;">
     <input type="text" class="search-input" id="search-input" placeholder="名前で検索..." aria-label="名前で検索" autocomplete="off">
     <button class="search-clear" id="search-clear" aria-label="検索クリア">×</button>
+    <div class="search-suggestions" id="search-suggestions" role="listbox"></div>
   </div>
 </div>
 
@@ -272,7 +289,8 @@ body {
 </div>
 
 <div class="seat-banner" id="seat-banner">
-  <span class="seat-banner-label">あなたの座席</span><br>
+  <span class="seat-banner-label">あなたの座席</span>
+  <span class="seat-banner-name" id="seat-banner-name" style="font-size:13px;font-weight:600;color:var(--text);margin-left:8px;"></span><br>
   <span class="seat-banner-table" id="seat-banner-table"></span>
   <span class="seat-banner-status" id="seat-banner-status"></span>
   <div class="seat-banner-opponents" id="seat-banner-opponents"></div>
@@ -461,8 +479,9 @@ const renderSeatBanner = () => {
   const query = searchName.trim().toLowerCase()
   if (!query || !tournamentData) { banner.classList.remove('show'); return }
   const { players = [], tables = [] } = tournamentData
-  const player = players.find(p => p.name.toLowerCase().includes(query))
+  const player = players.find(p => p.name.toLowerCase() === query) || players.find(p => p.name.toLowerCase().includes(query))
   if (!player) { banner.classList.remove('show'); return }
+  document.getElementById('seat-banner-name').textContent = player.name
   const table = tables.find(t => (t.playerIds || []).includes(player.id))
   const opEl = document.getElementById('seat-banner-opponents')
   if (table) {
@@ -710,13 +729,62 @@ document.querySelectorAll('.tab').forEach(tab => {
 // ── 名前検索 ─────────────────────────────
 const searchInput = document.getElementById('search-input')
 const searchClear = document.getElementById('search-clear')
+const suggestionsEl = document.getElementById('search-suggestions')
 searchInput.value = searchName
+
+const updateSuggestions = () => {
+  const q = searchInput.value.trim().toLowerCase()
+  if (!q || !tournamentData) { suggestionsEl.classList.remove('show'); return }
+  const players = tournamentData.players || []
+  const matches = players
+    .filter(p => p.name.toLowerCase().includes(q))
+    .slice(0, 8)
+  if (!matches.length || (matches.length === 1 && matches[0].name.toLowerCase() === q)) {
+    suggestionsEl.classList.remove('show'); return
+  }
+  suggestionsEl.innerHTML = matches.map(p => {
+    const idx = p.name.toLowerCase().indexOf(q)
+    const highlighted = esc(p.name.slice(0, idx)) + '<mark>' + esc(p.name.slice(idx, idx + q.length)) + '</mark>' + esc(p.name.slice(idx + q.length))
+    return `<div class="search-suggestion" role="option" data-name="${esc(p.name)}">${highlighted}</div>`
+  }).join('')
+  suggestionsEl.classList.add('show')
+}
+
+const selectSuggestion = name => {
+  searchName = name
+  searchInput.value = name
+  localStorage.setItem('view_search_name', searchName)
+  searchClear.classList.toggle('show', !!searchName)
+  suggestionsEl.classList.remove('show')
+  render()
+}
+
+suggestionsEl.addEventListener('click', e => {
+  const item = e.target.closest('.search-suggestion')
+  if (item) selectSuggestion(item.dataset.name)
+})
 
 searchInput.addEventListener('input', () => {
   searchName = searchInput.value
   localStorage.setItem('view_search_name', searchName)
   searchClear.classList.toggle('show', !!searchName)
+  updateSuggestions()
   render()
+})
+
+searchInput.addEventListener('focus', () => updateSuggestions())
+searchInput.addEventListener('keydown', e => {
+  if (!suggestionsEl.classList.contains('show')) return
+  const items = suggestionsEl.querySelectorAll('.search-suggestion')
+  const active = suggestionsEl.querySelector('.search-suggestion.active')
+  let idx = [...items].indexOf(active)
+  if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); items.forEach(el => el.classList.remove('active')); items[idx]?.classList.add('active') }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); items.forEach(el => el.classList.remove('active')); items[idx]?.classList.add('active') }
+  else if (e.key === 'Enter' && active) { e.preventDefault(); selectSuggestion(active.dataset.name) }
+})
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-bar')) suggestionsEl.classList.remove('show')
 })
 
 searchClear.addEventListener('click', () => {
@@ -724,6 +792,7 @@ searchClear.addEventListener('click', () => {
   searchInput.value = ''
   localStorage.setItem('view_search_name', '')
   searchClear.classList.remove('show')
+  suggestionsEl.classList.remove('show')
   render()
 })
 

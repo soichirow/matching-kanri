@@ -29,8 +29,8 @@ No server required. No installation needed. Runs entirely in the browser.
 ### For Hosts
 
 ```
-1. Add players (＋人 button / Excel bulk import)
-2. Add tables (＋卓 button)
+1. Add players (＋プレイヤー button / Excel bulk import)
+2. Add tables (＋テーブル button)
 3. Press "マッチング" to auto-assign seats → preview → confirm
 4. End match → next round
 ```

@@ -27,15 +27,17 @@ Scan the QR code displayed by the organizer using your phone's camera.
 
 ### Search for Your Name
 Enter your name in the search bar at the top of the screen:
-- A **seat banner** appears, showing your table and opponents at a glance
+- An **autocomplete list** appears as you type — tap your name (or use arrow keys + Enter)
+- A **seat banner** shows your name, table, and opponents at a glance
 - Your name is highlighted in purple in the table list
 - Your name is remembered for the next time you visit
+- If multiple players match your input, the seat banner is hidden — select from the autocomplete list
 
 ### Tables Tab
 Shows the seating arrangement for all tables. Tables with active matches appear at the top.
 
 ### Leaderboard Tab
-Displays all players' cumulative scores and rankings (when score tracking is enabled).
+Displays all players' cumulative scores and rankings. Only visible when score tracking is enabled by the host.
 
 ### Match History Tab
 Select a player to view their past opponents and the number of times they have played against each.

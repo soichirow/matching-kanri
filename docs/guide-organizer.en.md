@@ -7,8 +7,8 @@ A guide for managing card game event matchmaking.
 ## Getting Started
 
 1. **Open the app** — https://soichirow.github.io/matching-kanri/
-2. **Add tables** — Use the "＋卓" button in the header to set the number of tables at the venue
-3. **Add players** — Use the "＋人" button, or bulk-import from Excel
+2. **Add tables** — Press "＋テーブル" button → Select count and player size in dialog
+3. **Add players** — Press "＋プレイヤー" button → Select count in dialog, or bulk-import from Excel
 4. **Match** — Just press the "マッチング" button at the bottom of the screen
 
 ---
@@ -17,8 +17,8 @@ A guide for managing card game event matchmaking.
 
 ### Preparation
 
-- **Add tables**: Select the number of tables from the left dropdown and press "＋卓". The default is a 4-player table.
-- **Add players**: Select the number of players from the right dropdown and press "＋人". When adding a single player, a dialog will appear for entering their name and group.
+- **Add tables**: Press "＋テーブル" → In the dialog, select the number of tables (1-10) and player count per table (2-8). Default is 4-player tables.
+- **Add players**: Press "＋プレイヤー" → In the dialog, select the count. For a single player, a name/group input dialog appears. Use "追加して続ける" (Add & Continue) for consecutive entries.
 - **Excel bulk import**: Click the clipboard icon. Paste columns directly from Excel (Column A: name, Column B: group, Column C: bracket).
 
 ### Matching

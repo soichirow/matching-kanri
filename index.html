@@ -331,7 +331,6 @@ body {
 
 .table-players { padding: 8px 10px; }
 .table-player  { font-size: 15px; padding: 3px 0; font-weight: 500; word-break: break-all; }
-.table-empty   { font-size: 12px; color: var(--text-dim); font-style: italic; }
 .table-player.empty-slot { color: var(--text-dim); font-weight: 400; font-size: 13px; opacity: 0.5; }
 
 .table-footer {
@@ -368,8 +367,6 @@ body {
   height: 100%; padding: 0 16px; overflow-x: auto;
   flex-wrap: wrap;
 }
-.hint { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
-
 #match-preview { display: flex; gap: 6px; white-space: nowrap; flex-shrink: 0; }
 
 .match-preview-item {
@@ -644,7 +641,6 @@ body {
   }
   .matching-bar-inner { padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
   .matching-bar .btn { min-height: 40px; padding: 8px 14px; }
-  .hint { display: none; }
   /* マッチングバー分の下余白 */
   .app-body { padding-bottom: 70px; }
 
@@ -767,7 +763,7 @@ body {
       CSV(カンマ区切り)にも対応。グループ・ブラケットは任意（省略可）。同名はスキップ。
     </div>
     <div id="paste-hint-table" class="paste-hint" style="display:none">
-      ExcelのA列に<code>テーブル名</code>、B列に<code>サイズ(2/3/4)</code>を入れてコピー → 下に貼り付け<br>
+      ExcelのA列に<code>テーブル名</code>、B列に<code>サイズ(2〜8)</code>を入れてコピー → 下に貼り付け<br>
       サイズ列は省略可（省略時は4人）。
     </div>
 
@@ -2300,7 +2296,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h3 style="margin:0 0 6px;font-size:14px;color:var(--accent);"><i data-lucide="keyboard" style="width:14px;height:14px;"></i> その他</h3>
       <p style="margin:0;">
-        <strong>Ctrl+Z / ↩ボタン</strong>：直前の操作を元に戻す<br>
+        <strong>Ctrl+Z / 元に戻すボタン</strong>：直前の操作を元に戻す<br>
         <strong>設定ボタン</strong>：テーマ切替、点数ON/OFF、データクリアなど
       </p>
     </div>`,

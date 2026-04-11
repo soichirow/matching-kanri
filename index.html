@@ -1584,9 +1584,10 @@ const finishAllTables = async () => {
   toast(`${playing.length}卓を終了しました`)
 }
 
-const disbandTable = id => {
+const disbandTable = async id => {
   const t = getTables().find(x => x.id === id)
   if (!t) return
+  if (!await dlgConfirm(`<strong>${esc(t.label)}</strong> を解散しますか？<br><small>対戦履歴も取り消されます。</small>`, '解散', 'btn-del')) return
   saveUndoSnapshot(`解散：${t.label}`)
   t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
   deleteMatchByTable(id)

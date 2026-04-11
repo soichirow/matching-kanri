@@ -148,6 +148,15 @@ npx eslint . --ext .js  # Linter
 
 ---
 
+## Support
+
+If this app is useful to you, please consider supporting development:
+
+- [Wish List (Amazon JP)](https://www.amazon.jp/hz/wishlist/ls/1Z0X9ZM1D65A7?ref_=wl_share)
+- [Support via Amazon](https://amzn.to/4dB8wlz)
+
+---
+
 ## License
 
 MIT - (c) Soichiro [@black777cat](https://x.com/black777cat)

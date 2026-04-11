@@ -172,6 +172,15 @@ RPC関数: `create_tournament`, `update_tournament`, `delete_tournament`, `find_
 
 ---
 
+## 支援
+
+このアプリが役に立ったら、開発を支援していただけると嬉しいです。
+
+- [ほしいものリスト (Amazon)](https://www.amazon.jp/hz/wishlist/ls/1Z0X9ZM1D65A7?ref_=wl_share)
+- [Amazon で支援](https://amzn.to/4dB8wlz)
+
+---
+
 ## ライセンス
 
 MIT - (c) そういちろう [@black777cat](https://x.com/black777cat)

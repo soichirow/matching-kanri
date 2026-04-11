@@ -1300,8 +1300,8 @@ const renderPlayers = () => {
       <input type="checkbox" class="match-chk" data-action="match-check" data-id="${p.id}" ${chk ? 'checked' : ''}
         title="マッチング対象に指定" style="accent-color:var(--accent);cursor:pointer;flex-shrink:0;width:14px;height:14px;">
       <span class="player-name" data-action="edit-player" data-id="${p.id}" title="タップで編集">${esc(p.name)}</span>
-      ${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}
       ${p.bracket ? `<span class="bracket-badge" title="ブラケット">${esc(p.bracket)}</span>` : ''}
+      ${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}
       ${vpEnabled && vpMap[p.id] != null ? `<span class="score-badge" title="累計点数">${vpMap[p.id]}pt</span>` : ''}
       ${tblBadge}
       <button class="delete-btn" data-action="history" data-id="${p.id}" title="対戦履歴"><i data-lucide="history"></i></button>
@@ -1439,7 +1439,7 @@ const refreshTableCard = (el, t) => {
         const p = players.find(x => x.id === id)
         const grp = p?.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
         const brk = p?.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
-        return `<div class="table-player pending-player" style="display:flex;align-items:center;gap:4px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(p?.name ?? '?')}</span>${grp}${brk}</div>`
+        return `<div class="table-player pending-player" style="display:flex;align-items:center;gap:4px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(p?.name ?? '?')}</span>${brk}${grp}</div>`
       }).join('')
     : seated.length
       ? seated.map(p => {
@@ -1449,7 +1449,7 @@ const refreshTableCard = (el, t) => {
             : ''
           const grp = p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
           const brk = p.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
-          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(p.name)}</span>${grp}${brk}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
+          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(p.name)}</span>${brk}${grp}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
         }).join('')
       : Array.from({ length: t.size }, (_, i) => `<div class="table-player empty-slot">- 空席 ${i + 1}</div>`).join('')
 

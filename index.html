@@ -2124,7 +2124,8 @@ document.addEventListener('DOMContentLoaded', () => {
        <div class="dlg-field">
          <label style="color:var(--accent2);font-size:13px;">イベント共有</label>
          ${s.shareId
-           ? `<div style="display:flex;flex-direction:column;gap:8px;">
+           ? `<p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;line-height:1.6;">参加者に<strong style="color:var(--accent);">コード</strong>を伝えて、<a href="${location.origin + location.pathname.replace('index.html','') + 'view.html'}" target="_blank" style="color:var(--accent2);">参加者ページ</a>で入力してもらってください。</p>
+             <div style="display:flex;flex-direction:column;gap:8px;">
                <div style="display:flex;align-items:center;gap:6px;">
                  <label class="toggle"><input type="checkbox" id="dlg-share-sync" ${s.shareSync !== false ? 'checked' : ''}><span class="slider"></span></label>
                  <span style="font-size:13px;">自動同期</span>
@@ -2141,14 +2142,17 @@ document.addEventListener('DOMContentLoaded', () => {
                  </div>
                </div>
                <div style="display:flex;gap:6px;">
-                 <button type="button" class="btn btn-cancel-m" id="dlg-share-copy" style="flex:1;"><i data-lucide="clipboard-copy"></i> URLコピー</button>
+                 <button type="button" class="btn btn-cancel-m" id="dlg-share-copy-code" style="flex:1;"><i data-lucide="clipboard-copy"></i> コードコピー</button>
+                 <button type="button" class="btn btn-cancel-m" id="dlg-share-copy" style="flex:1;"><i data-lucide="link"></i> URLコピー</button>
+               </div>
+               <div style="display:flex;gap:6px;">
                  <button type="button" class="btn btn-cancel-m" id="dlg-share-qr" style="flex:1;"><i data-lucide="qr-code"></i> QRコード</button>
                  <button type="button" class="btn btn-cancel-m" id="dlg-share-now" style="flex:1;"><i data-lucide="refresh-cw"></i> 同期</button>
                </div>
                <div id="dlg-qr-area" style="display:none;text-align:center;padding:8px;background:white;border-radius:8px;"></div>
                <button type="button" class="btn btn-cancel-m" id="dlg-share-stop" style="text-align:left;color:var(--danger);font-size:11px;"><i data-lucide="x"></i> 共有を停止</button>
              </div>`
-           : `<p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">参加者にテーブル配席や順位表をスマホで共有できます。</p>
+           : `<p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">共有すると参加コードが発行され、参加者がスマホでテーブル配席や順位表を確認できるようになります。</p>
               <button type="button" class="btn btn-ok-add" id="dlg-share-start" style="text-align:left;"><i data-lucide="share-2"></i> イベントを共有する</button>`
          }
        </div>
@@ -2262,6 +2266,11 @@ document.addEventListener('DOMContentLoaded', () => {
         render()
         setTimeout(dlgSettings, 200)
       })()
+      return
+    }
+    if (e.target.closest('#dlg-share-copy-code')) {
+      const code = getSettings().shareCode
+      if (code) navigator.clipboard.writeText(code).then(() => toast('参加コードをコピーしました'))
       return
     }
     if (e.target.closest('#dlg-share-copy')) {

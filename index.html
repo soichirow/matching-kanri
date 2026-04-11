@@ -2106,75 +2106,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const cur = s.minFill ?? 0
     return _openDlg(
       '設定',
-      `<div class="dlg-field">
+      `<!-- ━━ 基本 ━━ -->
+       <div class="dlg-field">
          <label>大会名</label>
          <input type="text" id="dlg-tournament-name" value="${esc(s.tournamentName || '')}" placeholder="例：第5回カードバトル大会">
        </div>
-       <div class="dlg-field">
-         <label>テーマ</label>
-         <div class="dlg-pills" id="dlg-theme-pills">
+       <div class="dlg-field" style="display:flex;align-items:center;gap:12px;">
+         <label style="margin:0;">テーマ</label>
+         <div class="dlg-pills" id="dlg-theme-pills" style="margin:0;">
            <button type="button" class="dlg-pill${(s.theme||'dark')==='dark'?' active':''}" data-val="dark"><i data-lucide="moon"></i> ダーク</button>
            <button type="button" class="dlg-pill${s.theme==='light'?' active':''}" data-val="light"><i data-lucide="sun"></i> ライト</button>
          </div>
        </div>
+
+       <!-- ━━ 大会共有 ━━ -->
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
-         <label>マッチング最低人数</label>
-         <p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">
-           テーブルサイズより少ない人数でも開始を許可します。<br>
-           例：4人テーブルで最低3人 → 11人を3卓に4,4,3で割り当て可能。<br>
-           0 = テーブルサイズと同じ（デフォルト動作）
-         </p>
-         <input type="number" id="dlg-min-fill" min="0" max="8" value="${cur}" style="width:80px;">
-       </div>
-       <hr style="border-color:var(--border);margin:12px 0;">
-       <div class="dlg-field">
-         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-           <label class="toggle"><input type="checkbox" id="dlg-show-round" ${s.showRound ? 'checked' : ''}><span class="slider"></span></label>
-           ラウンド数を表示する
-         </label>
-       </div>
-       <div class="dlg-field">
-         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-           <label class="toggle"><input type="checkbox" id="dlg-enable-bracket" ${s.enableBracket ? 'checked' : ''}><span class="slider"></span></label>
-           ブラケット機能を使う
-         </label>
-         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 46px;">
-           同じブラケットのプレイヤー同士でのみマッチングします。<br>
-           グループの逆で「この中だけで対戦」を制限する機能です。
-         </p>
-       </div>
-       <div class="dlg-field">
-         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-           <label class="toggle"><input type="checkbox" id="dlg-avoid-short" ${s.avoidShort ? 'checked' : ''}><span class="slider"></span></label>
-           少人数卓の連続を避ける
-         </label>
-         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 46px;">
-           前回テーブルの最大人数に満たなかったプレイヤーを、今回のショート卓に入りにくくします。
-         </p>
-       </div>
-       <div class="dlg-field">
-         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-           <label class="toggle"><input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''}><span class="slider"></span></label>
-           点数を記録する
-         </label>
-         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 6px 46px;">
-           ONにすると対戦中のテーブルに点数入力欄が表示されます（プラス・マイナス対応）。
-         </p>
-         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-left:24px;">
-           <label class="toggle"><input type="checkbox" id="dlg-vp-matching" ${s.vpMatching ? 'checked' : ''} ${!s.enableVP ? 'disabled' : ''}><span class="slider"></span></label>
-           マッチングに点数を反映する
-         </label>
-         <p style="font-size:12px;color:var(--text-dim);margin:4px 0 0 70px;">
-           累計点数が近いプレイヤー同士を同卓にしやすくします。
-         </p>
-       </div>
-       <hr style="border-color:var(--border);margin:12px 0;">
-       <div class="dlg-field">
-         <label style="color:var(--accent2);">大会共有</label>
-         <p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">
-           参加者がスマホでテーブル配席や順位表を確認できるURLを発行します。
-         </p>
+         <label style="color:var(--accent2);font-size:13px;">大会共有</label>
          ${s.shareId
            ? `<div style="display:flex;flex-direction:column;gap:8px;">
                <div style="display:flex;align-items:center;gap:6px;">
@@ -2198,29 +2146,69 @@ document.addEventListener('DOMContentLoaded', () => {
                  <button type="button" class="btn btn-cancel-m" id="dlg-share-now" style="flex:1;"><i data-lucide="refresh-cw"></i> 同期</button>
                </div>
                <div id="dlg-qr-area" style="display:none;text-align:center;padding:8px;background:white;border-radius:8px;"></div>
-               <button type="button" class="btn btn-cancel-m" id="dlg-share-stop" style="text-align:left;color:var(--danger);"><i data-lucide="x"></i> 共有を停止</button>
+               <button type="button" class="btn btn-cancel-m" id="dlg-share-stop" style="text-align:left;color:var(--danger);font-size:11px;"><i data-lucide="x"></i> 共有を停止</button>
              </div>`
-           : `<button type="button" class="btn btn-ok-add" id="dlg-share-start" style="text-align:left;"><i data-lucide="share-2"></i> 大会を共有する</button>`
+           : `<p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">参加者にテーブル配席や順位表をスマホで共有できます。</p>
+              <button type="button" class="btn btn-ok-add" id="dlg-share-start" style="text-align:left;"><i data-lucide="share-2"></i> 大会を共有する</button>`
          }
        </div>
+
+       <!-- ━━ マッチング ━━ -->
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
-         <label>その他</label>
-         <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
-           <button type="button" class="btn btn-cancel-m" id="dlg-add-obj" style="text-align:left;">
-             <i data-lucide="box"></i> 配置物を追加（壁・モニターなど）
-           </button>
-           <button type="button" class="btn btn-cancel-m" id="dlg-load-sample" style="text-align:left;">
-             <i data-lucide="shuffle"></i> サンプルデータで試す
-           </button>
+         <label style="font-size:13px;">マッチング設定</label>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-show-round" ${s.showRound ? 'checked' : ''}><span class="slider"></span></label>
+           ラウンド数を表示
+         </label>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-enable-bracket" ${s.enableBracket ? 'checked' : ''}><span class="slider"></span></label>
+           ブラケット機能
+         </label>
+         <p style="font-size:11px;color:var(--text-dim);margin:2px 0 0 46px;">同ブラケット内でのみマッチング</p>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-avoid-short" ${s.avoidShort ? 'checked' : ''}><span class="slider"></span></label>
+           少人数卓の連続を避ける
+         </label>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-enable-vp" ${s.enableVP ? 'checked' : ''}><span class="slider"></span></label>
+           点数を記録する
+         </label>
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 0 24px;">
+           <label class="toggle"><input type="checkbox" id="dlg-vp-matching" ${s.vpMatching ? 'checked' : ''} ${!s.enableVP ? 'disabled' : ''}><span class="slider"></span></label>
+           <span style="font-size:12px;">点数をマッチングに反映</span>
+         </label>
+       </div>
+       <div class="dlg-field">
+         <div style="display:flex;align-items:center;gap:8px;">
+           <label style="white-space:nowrap;">最低人数</label>
+           <input type="number" id="dlg-min-fill" min="0" max="8" value="${cur}" style="width:60px;">
+           <span style="font-size:11px;color:var(--text-dim);">0 = テーブルサイズと同じ</span>
          </div>
+       </div>
+
+       <!-- ━━ その他 ━━ -->
+       <hr style="border-color:var(--border);margin:12px 0;">
+       <div style="display:flex;gap:6px;">
+         <button type="button" class="btn btn-cancel-m" id="dlg-add-obj" style="flex:1;text-align:center;font-size:11px;">
+           <i data-lucide="box"></i> 配置物
+         </button>
+         <button type="button" class="btn btn-cancel-m" id="dlg-load-sample" style="flex:1;text-align:center;font-size:11px;">
+           <i data-lucide="shuffle"></i> サンプル
+         </button>
        </div>
        <hr style="border-color:var(--border);margin:12px 0;">
        <div class="dlg-field">
-         <label style="color:var(--danger);">データクリア</label>
-         <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
+         <div style="display:flex;flex-direction:column;gap:6px;">
            <button type="button" class="btn btn-ok-add" id="dlg-new-tournament" style="text-align:left;"><i data-lucide="rotate-ccw"></i> 新しい大会を始める</button>
-           <p style="font-size:11px;color:var(--text-dim);margin:-2px 0 4px 0;">テーブル配置を維持したまま、プレイヤーと対戦履歴をリセットします。</p>
            <button type="button" class="btn btn-cancel-m" id="dlg-clear-matches" style="text-align:left;">
              <i data-lucide="trash-2"></i> 対戦履歴をクリア
            </button>

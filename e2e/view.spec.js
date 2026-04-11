@@ -57,3 +57,32 @@ test('更新ボタンのスピンアニメーション', async ({ page }) => {
   await page.waitForTimeout(700)
   await expect(page.locator('#btn-refresh')).not.toHaveClass(/spinning/)
 })
+
+test('テーマ切替ボタンが動作する', async ({ page }) => {
+  await page.goto('/view.html?id=test')
+  const html = page.locator('html')
+  // デフォルトはダーク
+  await expect(html).not.toHaveAttribute('data-theme', 'light')
+  // テーマ切替
+  await page.click('#btn-theme')
+  await expect(html).toHaveAttribute('data-theme', 'light')
+  // もう一度押すとダークに戻る
+  await page.click('#btn-theme')
+  await expect(html).not.toHaveAttribute('data-theme', 'light')
+})
+
+test('座席バナー要素が存在する', async ({ page }) => {
+  await page.goto('/view.html?id=test')
+  // seat-banner要素が存在し、初期状態ではshowクラスなし
+  await expect(page.locator('#seat-banner')).toHaveCount(1)
+  await expect(page.locator('#seat-banner')).not.toHaveClass(/show/)
+})
+
+test('コード入力画面で送信ボタンが動作する', async ({ page }) => {
+  await page.goto('/view.html')
+  await expect(page.locator('#code-input')).toBeVisible()
+  await page.fill('#code-input', 'ZZZZ')
+  await page.click('#code-submit')
+  // ボタンが「検索中...」に変わる
+  await expect(page.locator('#code-submit')).toContainText('検索中', { timeout: 5000 })
+})

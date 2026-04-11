@@ -243,3 +243,89 @@ test('プレイヤー追加→リロード→データ残存', async ({ page }) 
   await expect(page.locator('.player-item')).toHaveCount(3)
   await expect(page.locator('.player-item').first().locator('.player-name')).toContainText('プレイヤー01')
 })
+
+// ════════════════════════════════════════════════════════
+// イベント名・新イベント・解散（4ケース）
+// ════════════════════════════════════════════════════════
+
+test('イベント名を設定→ヘッダーに反映', async ({ page }) => {
+  await page.click('#btn-settings')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.fill('#dlg-tournament-name', 'テスト交流会')
+  await page.click('#dlg-ok')
+  await expect(page.locator('#header-title')).toContainText('テスト交流会')
+})
+
+test('新しいイベントを始める→プレイヤーリセット、テーブル維持', async ({ page }) => {
+  // プレイヤー4人追加
+  await page.selectOption('#quick-add-count', '4')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await expect(page.locator('.player-item')).toHaveCount(4)
+  // テーブル2卓追加（1卓だと追加ダイアログが開く）
+  await page.selectOption('#quick-add-table-count', '2')
+  await page.click('#btn-quick-add-tables')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await expect(page.locator('.table-card')).toHaveCount(2)
+  // 設定→新しいイベントを始める
+  await page.click('#btn-settings')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-new-tournament')
+  // 確認ダイアログ
+  await page.waitForTimeout(200)
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  await page.waitForTimeout(200)
+  // プレイヤーがリセット、テーブルは維持
+  await expect(page.locator('.player-item')).toHaveCount(0)
+  await expect(page.locator('.table-card')).toHaveCount(2)
+})
+
+test('解散ボタンに確認ダイアログが表示される', async ({ page }) => {
+  // 4人追加
+  await page.selectOption('#quick-add-count', '4')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  // 2卓追加
+  await page.selectOption('#quick-add-table-count', '2')
+  await page.click('#btn-quick-add-tables')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  // マッチング+確定
+  await page.click('#btn-match')
+  await page.waitForSelector('#btn-confirm-match:not([style*="display: none"])')
+  await page.click('#btn-confirm-match')
+  await expect(page.locator('.btn-disband').first()).toBeVisible()
+  // 解散ボタンクリック→確認ダイアログ
+  await page.locator('.btn-disband').first().click()
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await expect(page.locator('#dlg-body')).toContainText('解散しますか')
+  await page.click('#dlg-cancel')
+})
+
+test('点数記録ON→テーブルカードにVP入力欄が表示', async ({ page }) => {
+  // 設定でVPをON
+  await page.click('#btn-settings')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.locator('#dlg-enable-vp').evaluate(el => { if (!el.checked) el.click() })
+  await page.click('#dlg-ok')
+  // 4人追加
+  await page.selectOption('#quick-add-count', '4')
+  await page.click('#btn-quick-add')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  // 2卓追加
+  await page.selectOption('#quick-add-table-count', '2')
+  await page.click('#btn-quick-add-tables')
+  await page.waitForSelector('#dlg-overlay:not(.hidden)')
+  await page.click('#dlg-ok')
+  // マッチング+確定
+  await page.click('#btn-match')
+  await page.waitForSelector('#btn-confirm-match:not([style*="display: none"])')
+  await page.click('#btn-confirm-match')
+  // VP入力欄が表示
+  await expect(page.locator('.score-input').first()).toBeVisible()
+})

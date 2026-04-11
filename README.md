@@ -1,5 +1,7 @@
 # マッチング管理
 
+[English](README.en.md)
+
 カードゲーム交流会・対戦イベントのためのマッチング管理アプリ。
 サーバー不要・インストール不要。ブラウザだけで動作します。
 
@@ -138,7 +140,7 @@ gas-backup/
 npm install             # 依存インストール
 npx vite                # 開発サーバー
 npx vitest run          # 単体テスト (72件)
-npx playwright test     # E2Eテスト (23件)
+npx playwright test     # E2Eテスト (30件)
 npx eslint . --ext .js  # リンター
 ```
 

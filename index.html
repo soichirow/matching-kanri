@@ -1451,7 +1451,9 @@ const refreshTableCard = (el, t) => {
             ? `<input type="number" class="score-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
                 value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±" inputmode="numeric">`
             : ''
-          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
+          const grp = p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
+          const brk = p.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
+          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;">${esc(p.name)}${grp}${brk}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
         }).join('')
       : Array.from({ length: t.size }, (_, i) => `<div class="table-player empty-slot">- 空席 ${i + 1}</div>`).join('')
 

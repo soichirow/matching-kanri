@@ -56,6 +56,12 @@ body {
 .header-title { font-size: 16px; font-weight: 800; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .header-status { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
 .header-status.live { color: var(--success); }
+.header-status.live::before {
+  content: ''; display: inline-block; width: 6px; height: 6px;
+  background: var(--success); border-radius: 50%; margin-right: 4px;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 .btn-refresh {
   width: 34px; height: 34px; border: 1px solid var(--border); background: var(--surface2);
   border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -214,6 +220,7 @@ body {
 .seat-banner-label { font-size: 12px; color: var(--text-dim); }
 .seat-banner-table { font-size: 18px; font-weight: 800; color: var(--accent); }
 .seat-banner-status { font-size: 12px; color: var(--success); margin-left: 8px; }
+.seat-banner-opponents { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 
 /* ── テーマ切替 ───────────────────────── */
 .btn-theme {
@@ -266,6 +273,7 @@ body {
   <span class="seat-banner-label">あなたの座席</span><br>
   <span class="seat-banner-table" id="seat-banner-table"></span>
   <span class="seat-banner-status" id="seat-banner-status"></span>
+  <div class="seat-banner-opponents" id="seat-banner-opponents"></div>
 </div>
 
 <div class="content">
@@ -420,7 +428,7 @@ const updateStatus = (state) => {
   if (state === 'live') {
     const t = tournamentData?._updatedAt
     const timeStr = t ? new Date(t).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''
-    el.textContent = `最終更新 ${timeStr}`
+    el.textContent = `自動更新中 ${timeStr}`
     el.className = 'header-status live'
   } else if (state === 'error') {
     el.textContent = '接続エラー'
@@ -454,14 +462,20 @@ const renderSeatBanner = () => {
   const player = players.find(p => p.name.toLowerCase().includes(query))
   if (!player) { banner.classList.remove('show'); return }
   const table = tables.find(t => (t.playerIds || []).includes(player.id))
+  const opEl = document.getElementById('seat-banner-opponents')
   if (table) {
     document.getElementById('seat-banner-table').textContent = table.label
     document.getElementById('seat-banner-status').textContent = table.status === 'playing' ? '対戦中' : ''
+    const opponents = (table.playerIds || [])
+      .filter(id => id !== player.id)
+      .map(id => players.find(p => p.id === id)?.name ?? '?')
+    opEl.textContent = opponents.length ? '対戦相手: ' + opponents.join(', ') : ''
     banner.classList.add('show')
   } else {
-    const status = player.status === 'waiting' ? '待機中' : player.status === 'excluded' ? '除外中' : ''
+    const status = player.status === 'waiting' ? '待機中 — 次のマッチングをお待ちください' : player.status === 'excluded' ? '除外中' : ''
     document.getElementById('seat-banner-table').textContent = status || '未配席'
     document.getElementById('seat-banner-status').textContent = ''
+    opEl.textContent = ''
     banner.classList.add('show')
   }
 }
@@ -579,6 +593,11 @@ const renderStandings = () => {
       <thead><tr><th>#</th><th>名前</th>${headerScore}</tr></thead>
       <tbody>${tableRows}</tbody>
     </table>`
+  // ハイライト行に自動スクロール
+  setTimeout(() => {
+    const hl = panel.querySelector('tr.highlight')
+    if (hl) hl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, 100)
 }
 
 // ── 対戦履歴 ─────────────────────────────

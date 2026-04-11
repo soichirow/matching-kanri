@@ -1887,6 +1887,24 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // プレイヤー追加ダイアログ
+  const _doAddPlayerFromDlg = () => {
+    let name = document.getElementById('dlg-pname')?.value.trim()
+    if (!name) {
+      const existing = new Set(getPlayers().map(p => p.name))
+      let maxNum = 0
+      existing.forEach(n => { const m = n.match(/^プレイヤー(\d+)$/); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)) })
+      name = 'プレイヤー' + String(maxNum + 1).padStart(2, '0')
+    }
+    const customGroup = document.getElementById('dlg-group-custom')?.value.trim()
+    const group = customGroup || document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
+    const customBracket = document.getElementById('dlg-bracket-custom')?.value.trim()
+    const bracket = customBracket || document.querySelector('#dlg-bracket-pills .dlg-pill.active')?.dataset.val || null
+    const p = addPlayer(name, group || null)
+    if (bracket) updatePlayer(p.id, { bracket })
+    scheduleRender()
+    return name
+  }
+
   const dlgAddPlayer = () => {
     const bracketOn = !!getSettings().enableBracket
     const existingBrackets = [...new Set(getPlayers().map(p => p.bracket).filter(Boolean))]
@@ -1915,25 +1933,14 @@ document.addEventListener('DOMContentLoaded', () => {
            </div>
            <input type="text" id="dlg-bracket-custom" placeholder="新規ブラケット名" style="width:120px;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);">
          </div>
-       </div>` : ''}`,
-      `<button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
+       </div>` : ''}
+       <div id="dlg-add-count-msg" style="font-size:12px;color:var(--success);min-height:18px;"></div>`,
+      `<button class="btn btn-cancel-m" id="dlg-cancel">閉じる</button>
+       <button class="btn btn-ok-add" id="dlg-add-continue" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">追加して続ける</button>
        <button class="btn btn-ok-add"  id="dlg-ok">追加</button>`
     ).then(ok => {
       if (!ok) return
-      let name = document.getElementById('dlg-pname')?.value.trim()
-      if (!name) {
-        const existing = new Set(getPlayers().map(p => p.name))
-        let maxNum = 0
-        existing.forEach(n => { const m = n.match(/^プレイヤー(\d+)$/); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)) })
-        name = 'プレイヤー' + String(maxNum + 1).padStart(2, '0')
-      }
-      const customGroup = document.getElementById('dlg-group-custom')?.value.trim()
-      const group = customGroup || document.querySelector('#dlg-group-pills .dlg-pill.active')?.dataset.val || null
-      const customBracket = document.getElementById('dlg-bracket-custom')?.value.trim()
-      const bracket = customBracket || document.querySelector('#dlg-bracket-pills .dlg-pill.active')?.dataset.val || null
-      const p = addPlayer(name, group || null)
-      if (bracket) updatePlayer(p.id, { bracket })
-      scheduleRender()
+      _doAddPlayerFromDlg()
     })
   }
 
@@ -2103,9 +2110,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ダイアログのOK / キャンセルボタン委譲
+  let _addContinueCount = 0
   document.getElementById('dlg-footer').addEventListener('click', e => {
-    if (e.target.id === 'dlg-ok')     _closeDlg(true)
-    if (e.target.id === 'dlg-cancel') _closeDlg(null)
+    if (e.target.id === 'dlg-ok')     { _addContinueCount = 0; _closeDlg(true) }
+    if (e.target.id === 'dlg-cancel') { _addContinueCount = 0; _closeDlg(null) }
+    if (e.target.id === 'dlg-add-continue') {
+      const name = _doAddPlayerFromDlg()
+      _addContinueCount++
+      const msg = document.getElementById('dlg-add-count-msg')
+      if (msg) msg.textContent = `${name} を追加しました（計${_addContinueCount}人）`
+      const inp = document.getElementById('dlg-pname')
+      if (inp) { inp.value = ''; inp.focus() }
+      const customGroup = document.getElementById('dlg-group-custom')
+      if (customGroup) customGroup.value = ''
+      const customBracket = document.getElementById('dlg-bracket-custom')
+      if (customBracket) customBracket.value = ''
+    }
   })
 
   // ── ボタンイベント ────────────────────────────────────────

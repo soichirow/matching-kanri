@@ -3,8 +3,12 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   use: {
-    baseURL: `file:///${process.cwd().replace(/\\/g, '/')}/index.html`,
+    baseURL: 'http://localhost:5176',
     browserName: 'chromium',
   },
-  webServer: undefined, // 静的HTMLなのでサーバー不要
+  webServer: {
+    command: 'npx vite --port 5176',
+    port: 5176,
+    reuseExistingServer: true,
+  },
 })

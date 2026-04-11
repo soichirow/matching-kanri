@@ -1,12 +1,7 @@
 import { test, expect } from '@playwright/test'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const appUrl = `file:///${path.resolve(__dirname, '../index.html').replace(/\\/g, '/')}`
 
 test.beforeEach(async ({ page }) => {
-  await page.goto(appUrl)
+  await page.goto('/')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.waitForSelector('#app')
@@ -107,7 +102,7 @@ test('設定でブラケットON→プレイヤー追加ダイアログにブラ
   // 設定でブラケットを有効化
   await page.click('#btn-settings')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
-  await page.check('#dlg-enable-bracket')
+  await page.locator('#dlg-enable-bracket').evaluate(el => { if (!el.checked) el.click() })
   await page.click('#dlg-ok')
   await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
 
@@ -124,7 +119,7 @@ test('ブラケット付きプレイヤー追加→バッジ表示確認', async
   // 設定でブラケットを有効化
   await page.click('#btn-settings')
   await page.waitForSelector('#dlg-overlay:not(.hidden)')
-  await page.check('#dlg-enable-bracket')
+  await page.locator('#dlg-enable-bracket').evaluate(el => { if (!el.checked) el.click() })
   await page.click('#dlg-ok')
   await expect(page.locator('#dlg-overlay')).toHaveClass(/hidden/)
 

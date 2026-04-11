@@ -1,12 +1,22 @@
 {
   "name": "matching-kanri",
   "version": "1.0.0",
+  "description": "カードゲーム交流会・対戦イベントのためのマッチング管理アプリ",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soichirow/matching-kanri.git"
+  },
+  "author": "そういちろう (soichirow)",
+  "license": "MIT",
   "scripts": {
+    "dev": "vite",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

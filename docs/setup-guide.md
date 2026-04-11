@@ -181,7 +181,7 @@ clasp push --force
 ```bash
 npx vite                # 開発サーバー起動
 npx vitest run          # 単体テスト (72件)
-npx playwright test     # E2Eテスト (23件)
+npx playwright test     # E2Eテスト (30件)
 npx eslint . --ext .js  # リンター
 ```
 
@@ -205,5 +205,5 @@ npx eslint . --ext .js  # リンター
 
 - Supabase の無料枠: 500MB ストレージ / 200 同時接続
 - pg_cron による自動削除は14日後（変更する場合はSQL内の `interval '14 days'` を修正）
-- index.html は単一ファイルで全機能を含みます（フレームワーク不使用）
+- admin.html は単一ファイルで全機能を含みます（フレームワーク不使用）
 - view.html は ES Module (`<script type="module">`) で Supabase SDK を CDN から読み込みます

@@ -181,7 +181,7 @@ All event data will be backed up to a Google Spreadsheet daily at 3:30 AM JST.
 ```bash
 npx vite                # Start the dev server
 npx vitest run          # Unit tests (72 tests)
-npx playwright test     # E2E tests (23 tests)
+npx playwright test     # E2E tests (30 tests)
 npx eslint . --ext .js  # Linter
 ```
 
@@ -205,5 +205,5 @@ It is never included in source code or API responses.
 
 - Supabase free tier: 500 MB storage / 200 concurrent connections
 - Auto-cleanup via pg_cron deletes events after 14 days (modify `interval '14 days'` in the SQL to change this)
-- index.html is a single file containing all functionality (no framework used)
+- admin.html is a single file containing all functionality (no framework used)
 - view.html uses ES Modules (`<script type="module">`) and loads the Supabase SDK from a CDN

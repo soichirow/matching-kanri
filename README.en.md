@@ -18,6 +18,7 @@ No server required. No installation needed. Runs entirely in the browser.
 
 | Screen | URL | Purpose |
 |--------|-----|---------|
+| Top Page | `index.html` | Create event or enter participation code |
 | Admin | `admin.html` | Host manages players, tables, and matchmaking |
 | Participant View | `view.html` | Participants check seating, standings, and match history on mobile |
 
@@ -102,6 +103,7 @@ Participant (view.html) ← Served via GitHub Pages
 ### File Structure
 
 ```
+index.html              Top page (create event / enter code)
 admin.html              Admin screen (single file)
 view.html               Participant view page
 src/

@@ -21,7 +21,7 @@
 ### コードスタイル
 
 - フレームワーク不使用（Vanilla JS）
-- `index.html` と `view.html` は単一ファイルで完結
+- `admin.html` と `view.html` は単一ファイルで完結
 - `src/` 内のモジュールはテスト用の参照実装
 - ESLint の設定に従う
 

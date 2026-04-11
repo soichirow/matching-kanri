@@ -120,7 +120,7 @@ export function buildScoreMap(matches) {
 }
 
 /**
- * buildVpMap — index.html で使用されている名前。
+ * buildVpMap — admin.html で使用されている名前。
  * buildScoreMap と同一ロジック（VP = Victory Points の累積マップ）。
  */
 export function buildVpMap(matches) {

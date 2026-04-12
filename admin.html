@@ -3250,39 +3250,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── サイドバーリサイズ ───────────────────────────────────
-  const resizer = document.getElementById('panel-resizer')
-  const panel   = document.getElementById('player-panel')
-  let resizing = false, resizeStartX = 0, resizeStartW = 0
+  ;(() => {
+    const resizer = document.getElementById('panel-resizer')
+    const panel   = document.getElementById('player-panel')
+    let resizing = false, resizeStartX = 0, resizeStartW = 0
 
-  resizer.addEventListener('mousedown', e => {
-    resizing    = true
-    resizeStartX = e.clientX
-    resizeStartW = panel.offsetWidth
-    resizer.classList.add('dragging')
-    document.body.style.cursor    = 'col-resize'
-    document.body.style.userSelect = 'none'
-    e.preventDefault()
-  })
+    resizer.addEventListener('mousedown', e => {
+      resizing    = true
+      resizeStartX = e.clientX
+      resizeStartW = panel.offsetWidth
+      resizer.classList.add('dragging')
+      document.body.style.cursor    = 'col-resize'
+      document.body.style.userSelect = 'none'
+      e.preventDefault()
+    })
 
-  document.addEventListener('mousemove', e => {
-    if (!resizing) return
-    const w = Math.min(480, Math.max(140, resizeStartW + (e.clientX - resizeStartX)))
-    panel.style.width = `${w}px`
-  })
+    document.addEventListener('mousemove', e => {
+      if (!resizing) return
+      const w = Math.min(480, Math.max(140, resizeStartW + (e.clientX - resizeStartX)))
+      panel.style.width = `${w}px`
+    })
 
-  document.addEventListener('mouseup', () => {
-    if (!resizing) return
-    resizing = false
-    resizer.classList.remove('dragging')
-    document.body.style.cursor    = ''
-    document.body.style.userSelect = ''
+    document.addEventListener('mouseup', () => {
+      if (!resizing) return
+      resizing = false
+      resizer.classList.remove('dragging')
+      document.body.style.cursor    = ''
+      document.body.style.userSelect = ''
     // 幅を記憶
     saveSettings({ ...getSettings(), panelWidth: panel.offsetWidth })
   })
 
-  // 保存済み幅を復元
-  const savedWidth = getSettings().panelWidth
-  if (savedWidth) panel.style.width = `${savedWidth}px`
+    // 保存済み幅を復元
+    const savedWidth = getSettings().panelWidth
+    if (savedWidth) panel.style.width = `${savedWidth}px`
+  })()
 
   // ── テーマ切替 ──────────────────────────────────────────
   applyTheme(getSettings().theme || 'dark')

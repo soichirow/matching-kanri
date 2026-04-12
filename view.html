@@ -635,8 +635,8 @@ const renderTables = () => {
         if (selfScoreEnabled) {
           scoreHtml = `<div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:12px;color:var(--text-dim);">自分のスコア:</span>
-            <input type="number" class="self-score-input" data-match-id="${matchData.id}" data-pid="${selfPlayer.id}"
-              value="${savedScore ?? ''}" inputmode="numeric"
+            <input type="number" class="self-score-input" data-match-id="${esc(matchData.id)}" data-pid="${esc(selfPlayer.id)}"
+              value="${savedScore ?? ''}" inputmode="numeric" min="-999" max="9999"
               style="width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--warning);font-weight:700;text-align:center;">
             <span style="font-size:11px;color:var(--text-dim);">pt</span>
           </div>`
@@ -647,7 +647,7 @@ const renderTables = () => {
               <span style="font-size:13px;color:var(--success);font-weight:600;">終了報告済み</span>
               <span style="font-size:11px;color:var(--text-dim);">(${reportCount}人が報告)</span>
             </div>`
-          : `<button class="report-finish-btn" data-match-id="${matchData.id}" data-pid="${selfPlayer.id}"
+          : `<button class="report-finish-btn" data-match-id="${esc(matchData.id)}" data-pid="${esc(selfPlayer.id)}"
               style="padding:10px 16px;min-height:44px;font-size:14px;font-weight:700;background:var(--accent2);color:white;border:none;border-radius:8px;cursor:pointer;">
               対戦終了を報告
             </button>`
@@ -693,7 +693,7 @@ const renderTables = () => {
         clearTimeout(_scoreTimer)
         _scoreTimer = setTimeout(async () => {
           const num = parseFloat(val)
-          if (val === '' || isNaN(num)) return
+          if (val === '' || isNaN(num) || !isFinite(num) || num < -999 || num > 9999) return
           try {
             const { error } = await supabase.rpc('submit_score', {
               p_tournament_id: tournamentId,

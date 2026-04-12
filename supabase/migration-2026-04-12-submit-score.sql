@@ -18,6 +18,11 @@ DECLARE
   match_obj jsonb;
   player_ids jsonb;
 BEGIN
+  -- スコア値のバリデーション
+  IF p_score IS NULL OR p_score < -999 OR p_score > 9999 OR p_score != p_score THEN
+    RAISE EXCEPTION 'Invalid score value';
+  END IF;
+
   -- イベントデータを取得
   SELECT data INTO t_data FROM tournaments WHERE id = p_tournament_id;
   IF t_data IS NULL THEN RAISE EXCEPTION 'Tournament not found'; END IF;

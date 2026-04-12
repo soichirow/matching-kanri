@@ -184,20 +184,8 @@ export function buildScoreMap(matches) {
   return map
 }
 
-/**
- * buildVpMap — admin.html で使用されている名前。
- * buildScoreMap と同一ロジック（VP = Victory Points の累積マップ）。
- */
-export function buildVpMap(matches) {
-  const map = {}
-  matches.forEach(m => {
-    if (!m.scores) return
-    Object.entries(m.scores).forEach(([pid, vp]) => {
-      map[pid] = (map[pid] ?? 0) + (vp ?? 0)
-    })
-  })
-  return map
-}
+/** buildVpMap — buildScoreMap のエイリアス（admin.html で使用される名前） */
+export const buildVpMap = buildScoreMap
 
 // ── 内部関数 ──────────────────────────────────────────────
 

@@ -77,7 +77,7 @@ npx eslint .            # リンター
 
 - URL/Key: `admin.html`と`view.html`内にハードコード（anon key、公開可）
 - テーブル: `tournaments` (id, data[JSONB], admin_key, short_code, created_at, updated_at)
-- RPC関数: `create_tournament`, `update_tournament`, `delete_tournament`, `find_tournament_by_code`, `cleanup_old_tournaments`
+- RPC関数: `create_tournament`, `update_tournament`, `delete_tournament`, `find_tournament_by_code`, `cleanup_old_tournaments`, `submit_score`, `report_finished`
 - pg_cron: 毎日UTC 19:00(JST 4:00)に14日以上前のデータを自動削除
 
 ## コーディング規約

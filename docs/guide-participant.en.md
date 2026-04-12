@@ -44,6 +44,22 @@ Select a player to view their past opponents and the number of times they have p
 
 ---
 
+## During a Match (when enabled by the host)
+
+### Check-in
+A "来ました" (I'm here) button appears in the seat banner. Tap it to confirm your attendance.
+
+### Self-Score Entry
+A score input field appears on your table card. Enter your score and it will be automatically sent to the host.
+
+### Match End Report
+A "対戦終了を報告" (Report match end) button appears on your table card. When 2 or more players report, the host is notified.
+
+### Round Timer
+A countdown timer appears in the header. It turns yellow under 5 minutes and red under 1 minute.
+
+---
+
 ## Auto-Refresh
 
 The screen **updates automatically** (a blinking green dot indicates an active connection).

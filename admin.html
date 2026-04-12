@@ -2334,7 +2334,7 @@ document.addEventListener('DOMContentLoaded', () => {
            ラウンドタイマー
          </label>
          <div style="display:flex;align-items:center;gap:6px;margin:6px 0 0 46px;">
-           <input type="number" id="dlg-timer-minutes" min="1" max="180" value="${s.timerMinutes || 50}" style="width:60px;" ${!s.enableTimer ? 'disabled' : ''}>
+           <input type="number" id="dlg-timer-minutes" min="1" max="180" value="${s.timerMinutes || 50}" style="width:60px;font-size:16px;" ${!s.enableTimer ? 'disabled' : ''}>
            <span style="font-size:12px;color:var(--text-dim);">分</span>
          </div>
        </div>

@@ -267,6 +267,7 @@ body {
 <div class="header">
   <div class="header-top">
     <span class="header-title" id="header-title">イベント情報</span>
+    <span id="view-timer" style="display:none;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--warning);"></span>
     <span class="header-status" id="header-status" aria-live="polite">接続中...</span>
     <button class="btn-theme" id="btn-theme" title="テーマ切替" aria-label="テーマ切替">
       <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
@@ -294,6 +295,9 @@ body {
   <span class="seat-banner-table" id="seat-banner-table"></span>
   <span class="seat-banner-status" id="seat-banner-status"></span>
   <div class="seat-banner-opponents" id="seat-banner-opponents"></div>
+  <button id="seat-checkin-btn" style="display:none;margin-top:8px;padding:8px 20px;font-size:14px;font-weight:700;
+    background:var(--success);color:#111;border:none;border-radius:8px;cursor:pointer;">来ました</button>
+  <span id="seat-checkin-done" style="display:none;margin-top:6px;font-size:13px;color:var(--success);font-weight:600;">出席確認済み</span>
 </div>
 
 <div class="content">
@@ -460,6 +464,27 @@ const updateStatus = (state) => {
   }
 }
 
+// ── ラウンドタイマー ─────────────────────────
+let _viewTimerInterval = null
+const _updateViewTimer = () => {
+  const el = document.getElementById('view-timer')
+  if (!el || !tournamentData) return
+  const s = tournamentData.settings || {}
+  if (!s.enableTimer || !s.timerEndAt) { el.style.display = 'none'; return }
+  const remaining = Math.max(0, s.timerEndAt - Date.now())
+  const min = Math.floor(remaining / 60000)
+  const sec = Math.floor((remaining % 60000) / 1000)
+  el.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  el.style.display = ''
+  if (remaining <= 0) { el.style.color = 'var(--danger)' }
+  else if (remaining < 60000) { el.style.color = 'var(--danger)' }
+  else if (remaining < 300000) { el.style.color = 'var(--warning)' }
+  else { el.style.color = 'var(--success)' }
+  if (!_viewTimerInterval) {
+    _viewTimerInterval = setInterval(_updateViewTimer, 1000)
+  }
+}
+
 // ── 描画 ─────────────────────────────────
 const render = () => {
   if (!tournamentData) return
@@ -467,6 +492,8 @@ const render = () => {
   const tName = tournamentData.settings?.tournamentName
   document.getElementById('header-title').textContent = tName || 'イベント情報'
   document.title = tName || 'イベント情報'
+  // タイマー表示
+  _updateViewTimer()
   // 順位表タブの表示/非表示（点数記録ONの場合のみ表示）
   const vpEnabled = !!tournamentData.settings?.enableVP
   const standingsTab = document.querySelector('.tab[data-tab="standings"]')
@@ -518,6 +545,23 @@ const renderSeatBanner = () => {
     opEl.textContent = ''
     banner.classList.add('show')
   }
+  // チェックイン表示
+  const checkinBtn = document.getElementById('seat-checkin-btn')
+  const checkinDone = document.getElementById('seat-checkin-done')
+  const checkinEnabled = !!tournamentData.settings?.enableCheckin
+  const checkedIn = localStorage.getItem('view_checkin_' + player.id)
+  if (checkinBtn && checkinDone) {
+    if (checkinEnabled && !checkedIn) {
+      checkinBtn.style.display = ''
+      checkinDone.style.display = 'none'
+    } else if (checkinEnabled && checkedIn) {
+      checkinBtn.style.display = 'none'
+      checkinDone.style.display = ''
+    } else {
+      checkinBtn.style.display = 'none'
+      checkinDone.style.display = 'none'
+    }
+  }
 }
 
 // ── テーブル一覧 ─────────────────────────
@@ -525,7 +569,14 @@ const renderTables = () => {
   const panel = document.getElementById('panel-tables')
   const { players = [], tables = [], settings = {} } = tournamentData
   const bracketOn = !!settings.enableBracket
+  const selfScoreEnabled = !!settings.enableSelfScore && !!settings.enableVP
   const query = searchName.trim().toLowerCase()
+  // セルフスコア用: 現在の検索対象プレイヤー
+  let selfPlayer = null
+  if (selfScoreEnabled && query) {
+    selfPlayer = players.find(p => p.name.toLowerCase() === query) ||
+      (players.filter(p => p.name.toLowerCase().includes(query)).length === 1 ? players.find(p => p.name.toLowerCase().includes(query)) : null)
+  }
 
   if (!tables.length) {
     panel.innerHTML = '<div class="empty-msg">テーブルがまだ登録されていません</div>'
@@ -572,9 +623,32 @@ const renderTables = () => {
         ${statusHtml}
       </div>
       <div class="card-players">${playersHtml}</div>
+      ${selfScoreEnabled && isPlaying && selfPlayer && seated.some(p => p.id === selfPlayer.id) ? (() => {
+        const matchData = (tournamentData.matches || []).slice().reverse().find(m => m.tableId === t.id)
+        const savedScore = localStorage.getItem('view_score_' + matchData?.id + '_' + selfPlayer.id)
+        return `<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--text-dim);">自分のスコア:</span>
+          <input type="number" class="self-score-input" data-match-id="${matchData?.id || ''}" data-pid="${selfPlayer.id}"
+            value="${savedScore ?? ''}" inputmode="numeric"
+            style="width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--warning);font-weight:700;text-align:center;">
+          <span style="font-size:11px;color:var(--text-dim);">pt</span>
+        </div>`
+      })() : ''}
     </div>`
   })
   panel.innerHTML = html
+
+  // セルフスコア入力のイベント委譲
+  if (selfScoreEnabled) {
+    panel.querySelectorAll('.self-score-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const val = inp.value.trim()
+        if (inp.dataset.matchId && inp.dataset.pid) {
+          localStorage.setItem('view_score_' + inp.dataset.matchId + '_' + inp.dataset.pid, val)
+        }
+      })
+    })
+  }
 }
 
 // ── 順位表 ──────────────────────────────
@@ -735,6 +809,19 @@ const renderHistory = () => {
 }
 
 // ── タブ切替 ─────────────────────────────
+// ── チェックイン ─────────────────────────────
+document.getElementById('seat-checkin-btn').addEventListener('click', () => {
+  if (!tournamentData) return
+  const query = searchName.trim().toLowerCase()
+  const { players = [] } = tournamentData
+  const player = players.find(p => p.name.toLowerCase() === query) ||
+    (players.filter(p => p.name.toLowerCase().includes(query)).length === 1 ? players.find(p => p.name.toLowerCase().includes(query)) : null)
+  if (!player) return
+  localStorage.setItem('view_checkin_' + player.id, Date.now().toString())
+  toast(player.name + ' — 出席確認しました')
+  renderSeatBanner()
+})
+
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false') })

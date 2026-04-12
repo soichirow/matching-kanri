@@ -720,6 +720,7 @@ body {
       <button id="btn-regen-match"   class="btn btn-regen"    style="display:none"><i data-lucide="refresh-cw"></i></button>
       <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none"><i data-lucide="x"></i></button>
       <div id="match-preview"></div>
+      <span id="round-timer" style="display:none;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--warning);cursor:pointer;white-space:nowrap;" title="タイマー（クリックで設定）"></span>
       <span style="flex:1;"></span>
       <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;" title="4人卓に3人でも配席する">
         <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
@@ -1631,6 +1632,36 @@ const refreshTableCard = (el, t) => {
   `
 }
 
+// ── ラウンドタイマー ────────────────────────────────────
+let _timerInterval = null
+const _updateTimer = () => {
+  const el = document.getElementById('round-timer')
+  if (!el) return
+  const s = getSettings()
+  if (!s.enableTimer || !s.timerEndAt) { el.style.display = 'none'; return }
+  const remaining = Math.max(0, s.timerEndAt - Date.now())
+  const min = Math.floor(remaining / 60000)
+  const sec = Math.floor((remaining % 60000) / 1000)
+  el.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  if (remaining <= 0) {
+    el.textContent = '00:00'
+    el.style.color = 'var(--danger)'
+    el.style.animation = 'none'
+  } else if (remaining < 60000) {
+    el.style.color = 'var(--danger)'
+  } else if (remaining < 300000) {
+    el.style.color = 'var(--warning)'
+  } else {
+    el.style.color = 'var(--success)'
+  }
+  if (!_timerInterval) {
+    _timerInterval = setInterval(_updateTimer, 1000)
+  }
+}
+const _stopTimer = () => {
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null }
+}
+
 const renderMatchingBar = () => {
   const preview    = document.getElementById('match-preview')
   const confirmBtn = document.getElementById('btn-confirm-match')
@@ -1648,6 +1679,17 @@ const renderMatchingBar = () => {
   if (regenBtn)   regenBtn.style.display   = hasPending ? '' : 'none'
   const finishAllBtn = document.getElementById('btn-finish-all')
   if (finishAllBtn) finishAllBtn.style.display = (!hasPending && hasPlaying) ? '' : 'none'
+  // タイマー表示
+  const timerEl = document.getElementById('round-timer')
+  const ts = getSettings()
+  if (timerEl) {
+    if (ts.enableTimer && ts.timerEndAt && hasPlaying) {
+      timerEl.style.display = ''
+      _updateTimer()
+    } else {
+      timerEl.style.display = 'none'
+    }
+  }
 }
 
 // ── アクション ────────────────────────────────────────────
@@ -1726,6 +1768,7 @@ const finishAllTables = async () => {
     t.playerIds.forEach(pid => updatePlayer(pid, { status: 'waiting' }))
     updateTable(t.id, { status: 'empty', playerIds: [] })
   })
+  saveSettings({ ...getSettings(), timerEndAt: null })
   scheduleRender()
   toast(`${playing.length}卓を終了しました`)
 }
@@ -1816,6 +1859,11 @@ const doConfirmMatching = () => {
   })
   pendingMatches = []
   checkedPlayers.clear()
+  // タイマー開始
+  const ts = getSettings()
+  if (ts.enableTimer && ts.timerMinutes) {
+    saveSettings({ ...getSettings(), timerEndAt: Date.now() + ts.timerMinutes * 60000 })
+  }
   scheduleRender()
 }
 
@@ -2267,6 +2315,36 @@ document.addEventListener('DOMContentLoaded', () => {
          </div>
        </div>
 
+       <!-- ━━ イベント運営 ━━ -->
+       <hr style="border-color:var(--border);margin:12px 0;">
+       <div class="dlg-field">
+         <label style="font-size:13px;">イベント運営</label>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-enable-timer" ${s.enableTimer ? 'checked' : ''}><span class="slider"></span></label>
+           ラウンドタイマー
+         </label>
+         <div style="display:flex;align-items:center;gap:6px;margin:6px 0 0 46px;">
+           <input type="number" id="dlg-timer-minutes" min="1" max="180" value="${s.timerMinutes || 50}" style="width:60px;" ${!s.enableTimer ? 'disabled' : ''}>
+           <span style="font-size:12px;color:var(--text-dim);">分</span>
+         </div>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-enable-checkin" ${s.enableCheckin ? 'checked' : ''}><span class="slider"></span></label>
+           参加者チェックイン
+         </label>
+         <p style="font-size:11px;color:var(--text-dim);margin:2px 0 0 46px;">参加者が「来ました」ボタンで出席確認</p>
+       </div>
+       <div class="dlg-field">
+         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+           <label class="toggle"><input type="checkbox" id="dlg-enable-self-score" ${s.enableSelfScore ? 'checked' : ''}><span class="slider"></span></label>
+           セルフスコア入力
+         </label>
+         <p style="font-size:11px;color:var(--text-dim);margin:2px 0 0 46px;">参加者が自分のスコアを入力可能に</p>
+       </div>
+
        <!-- ━━ その他 ━━ -->
        <hr style="border-color:var(--border);margin:12px 0;">
        <div style="display:flex;gap:6px;">
@@ -2306,8 +2384,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const avoidShort = !!document.getElementById('dlg-avoid-short')?.checked
       const enableVP = !!document.getElementById('dlg-enable-vp')?.checked
       const vpMatching = enableVP && !!document.getElementById('dlg-vp-matching')?.checked
+      const enableTimer = !!document.getElementById('dlg-enable-timer')?.checked
+      const timerMinutes = Math.max(1, parseInt(document.getElementById('dlg-timer-minutes')?.value ?? '50', 10)) || 50
+      const enableCheckin = !!document.getElementById('dlg-enable-checkin')?.checked
+      const enableSelfScore = !!document.getElementById('dlg-enable-self-score')?.checked
       const theme = document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark'
-      saveSettings({ ...getSettings(), tournamentName, minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, avoidShort, enableVP, vpMatching, theme })
+      saveSettings({ ...getSettings(), tournamentName, minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, avoidShort, enableVP, vpMatching, enableTimer, timerMinutes, enableCheckin, enableSelfScore, theme })
       applyTheme(theme)
       scheduleRender()
       toast('設定を保存しました')
@@ -2318,6 +2400,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.id === 'dlg-enable-vp') {
       const vpMatch = document.getElementById('dlg-vp-matching')
       if (vpMatch) { vpMatch.disabled = !e.target.checked; if (!e.target.checked) vpMatch.checked = false }
+    }
+    if (e.target.id === 'dlg-enable-timer') {
+      const mins = document.getElementById('dlg-timer-minutes')
+      if (mins) mins.disabled = !e.target.checked
     }
   })
 
@@ -3026,6 +3112,32 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-regen-match').addEventListener('click', () => doGenerateMatching(true))
   document.getElementById('btn-confirm-match').addEventListener('click', doConfirmMatching)
   document.getElementById('btn-cancel-match').addEventListener('click', doCancelMatching)
+  document.getElementById('round-timer').addEventListener('click', () => {
+    const s = getSettings()
+    if (!s.timerEndAt) return
+    _openDlg('ラウンドタイマー',
+      `<div class="dlg-field">
+         <label>残り時間を変更（分）</label>
+         <input type="number" id="dlg-timer-set" min="0" max="180" value="${Math.max(0, Math.ceil((s.timerEndAt - Date.now()) / 60000))}" style="width:80px;">
+       </div>`,
+      `<button class="btn btn-danger" id="dlg-timer-stop" style="margin-right:auto;">停止</button>
+       <button class="btn btn-cancel-m" id="dlg-cancel">キャンセル</button>
+       <button class="btn btn-ok-add" id="dlg-ok">設定</button>`
+    ).then(ok => {
+      if (!ok) return
+      const mins = parseInt(document.getElementById('dlg-timer-set')?.value ?? '0', 10)
+      saveSettings({ ...getSettings(), timerEndAt: Date.now() + Math.max(0, mins) * 60000 })
+      scheduleRender()
+    })
+  })
+  document.getElementById('dlg-footer').addEventListener('click', e => {
+    if (e.target.id === 'dlg-timer-stop') {
+      saveSettings({ ...getSettings(), timerEndAt: null })
+      _stopTimer()
+      _closeDlg(null)
+      scheduleRender()
+    }
+  }, true)
 
   const loadSampleData = () => {
     // 27人: [名前, グループ, ブラケット]

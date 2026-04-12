@@ -1321,8 +1321,13 @@ const applyTheme = theme => {
   else document.documentElement.removeAttribute('data-theme')
 }
 
-let pendingMatches  = []
-let selectedTables  = {}
+// ── UI状態管理 ────────────────────────────────────────────
+const uiState = {
+  pendingMatches: [],
+  selectedTables: {},
+  checkedPlayers: new Set(),
+  clearAll() { this.pendingMatches = []; this.selectedTables = {}; this.checkedPlayers.clear() },
+}
 
 // ── アンドゥ ─────────────────────────────────────────────
 const UNDO_STACK = []   // { desc, players, tables, matches }
@@ -1343,9 +1348,9 @@ const undo = () => {
   _memCache[KEYS.PLAYERS] = undefined; localStorage.setItem('mg_players', snap.players)
   _memCache[KEYS.TABLES]  = undefined; localStorage.setItem('mg_tables',  snap.tables)
   _memCache[KEYS.MATCHES] = undefined; localStorage.setItem('mg_matches', snap.matches)
-  pendingMatches = []
-  selectedTables = {}
-  checkedPlayers.clear()
+  uiState.pendingMatches = []
+  uiState.selectedTables = {}
+  uiState.checkedPlayers.clear()
   scheduleRender()
   toast(`元に戻しました：${snap.desc}`)
 }
@@ -1411,7 +1416,7 @@ const renderPlayerStats = () => {
 }
 
 const STATUS_ORDER = { playing: 0, waiting: 1, excluded: 2, break: 2, left: 2 }
-let checkedPlayers = new Set()   // マッチング指定チェック
+// uiState.checkedPlayers は uiState.uiState.checkedPlayers に統合
 
 const renderPlayers = () => {
   const list = document.getElementById('player-list')
@@ -1474,7 +1479,7 @@ const renderPlayers = () => {
       prevGroupKey = groupKey
     }
 
-    const chk   = checkedPlayers.has(p.id)
+    const chk   = uiState.checkedPlayers.has(p.id)
     const tblBadge = tbl
       ? `<span class="table-badge" title="${esc(tbl.label)}">${esc(tbl.label)}</span>`
       : ''
@@ -1653,8 +1658,8 @@ const buildTableFooterHTML = (pending, t, currentMatch, isSelected) => {
 const refreshTableCard = (el, t) => {
   const players  = getPlayers()
   const seated   = t.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean)
-  const sel      = !!selectedTables[t.id]
-  const pending  = pendingMatches.find(m => m.tableId === t.id)
+  const sel      = !!uiState.selectedTables[t.id]
+  const pending  = uiState.pendingMatches.find(m => m.tableId === t.id)
   const settings = getSettings()
   const vpEnabled = !!settings.enableVP
   const bracketOn = !!settings.enableBracket
@@ -1723,10 +1728,10 @@ const renderMatchingBar = () => {
   const regenBtn   = document.getElementById('btn-regen-match')
   if (!preview) return
 
-  const hasPending = pendingMatches.length > 0
+  const hasPending = uiState.pendingMatches.length > 0
   const hasPlaying = getTables().some(t => t.status === 'playing')
   preview.innerHTML = hasPending
-    ? `<span class="pending-badge" style="font-size:13px;">仮マッチ中 ${pendingMatches.length}卓</span>`
+    ? `<span class="pending-badge" style="font-size:13px;">仮マッチ中 ${uiState.pendingMatches.length}卓</span>`
     : ''
   if (confirmBtn) confirmBtn.style.display = hasPending ? '' : 'none'
   if (cancelBtn)  cancelBtn.style.display  = hasPending ? '' : 'none'
@@ -1840,8 +1845,8 @@ const disbandTable = async id => {
 }
 
 const toggleTableSelect = (id, checked) => {
-  if (checked) selectedTables[id] = true; else delete selectedTables[id]
-  pendingMatches = []
+  if (checked) uiState.selectedTables[id] = true; else delete uiState.selectedTables[id]
+  uiState.pendingMatches = []
   renderTables(); renderMatchingBar()
 }
 
@@ -1851,15 +1856,15 @@ const doGenerateMatching = (shuffle = false) => {
   const matches    = getMatches()
   // チェックがあればその人だけ、なければ待機中全員
   const allWaiting = allPlayers.filter(p => p.status === 'waiting')
-  const waiting    = checkedPlayers.size > 0
-    ? allWaiting.filter(p => checkedPlayers.has(p.id))
+  const waiting    = uiState.checkedPlayers.size > 0
+    ? allWaiting.filter(p => uiState.checkedPlayers.has(p.id))
     : allWaiting
-  const selected   = allTables.filter(t => selectedTables[t.id] && t.status === 'empty')
+  const selected   = allTables.filter(t => uiState.selectedTables[t.id] && t.status === 'empty')
   const targets    = selected.length > 0 ? selected : allTables.filter(t => t.status === 'empty')
 
   if (!targets.length) { toast('空きテーブルがありません'); return }
   if (!waiting.length) {
-    toast(checkedPlayers.size > 0 ? 'チェックした人に待機中の人がいません' : '待機中のプレイヤーがいません')
+    toast(uiState.checkedPlayers.size > 0 ? 'チェックした人に待機中の人がいません' : '待機中のプレイヤーがいません')
     return
   }
 
@@ -1878,7 +1883,7 @@ const doGenerateMatching = (shuffle = false) => {
       ;(bracketMap[key] ??= []).push(p)
     })
     const remainingTables = [...targets]
-    pendingMatches = []
+    uiState.pendingMatches = []
     // ブラケット付きグループを先に割り当て、なしは最後
     const keys = Object.keys(bracketMap).sort((a, b) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))
     for (const key of keys) {
@@ -1886,33 +1891,33 @@ const doGenerateMatching = (shuffle = false) => {
       if (!remainingTables.length) break
       const result = generateMatching(pool, remainingTables, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
       result.forEach(m => {
-        pendingMatches.push(m)
+        uiState.pendingMatches.push(m)
         const idx = remainingTables.findIndex(t => t.id === m.tableId)
         if (idx >= 0) remainingTables.splice(idx, 1)
       })
     }
   } else {
-    pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
+    uiState.pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
   }
 
-  if (!pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
+  if (!uiState.pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }
   // 複数テーブル時、席移動を最小化するテーブル割り当てを選択
-  if (pendingMatches.length > 1) {
-    pendingMatches = optimizeTableAssignment(pendingMatches, matches)
+  if (uiState.pendingMatches.length > 1) {
+    uiState.pendingMatches = optimizeTableAssignment(uiState.pendingMatches, matches)
   }
   renderTables(); renderMatchingBar(); renderPlayers(); renderPlayerStats()
 }
 
 const doConfirmMatching = () => {
   saveUndoSnapshot('マッチング確定')
-  pendingMatches.forEach(m => {
+  uiState.pendingMatches.forEach(m => {
     addMatch(m.tableId, m.playerIds)
     updateTable(m.tableId, { status: 'playing', playerIds: m.playerIds })
     m.playerIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
-    delete selectedTables[m.tableId]
+    delete uiState.selectedTables[m.tableId]
   })
-  pendingMatches = []
-  checkedPlayers.clear()
+  uiState.pendingMatches = []
+  uiState.checkedPlayers.clear()
   // タイマー開始
   const ts = getSettings()
   if (ts.enableTimer && ts.timerMinutes) {
@@ -1922,8 +1927,8 @@ const doConfirmMatching = () => {
 }
 
 const doCancelMatching = () => {
-  pendingMatches = []
-  checkedPlayers.clear()
+  uiState.pendingMatches = []
+  uiState.checkedPlayers.clear()
   renderTables(); renderMatchingBar(); renderPlayers(); renderPlayerStats()
 }
 
@@ -2551,9 +2556,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!ok) return
           _removeKey('mg_players')
           clearMatches()
-          pendingMatches = []
-          checkedPlayers.clear()
-          selectedTables = {}
+          uiState.pendingMatches = []
+          uiState.checkedPlayers.clear()
+          uiState.selectedTables = {}
           // テーブルのステータスだけリセット
           getTables().forEach(t => updateTable(t.id, { status: 'empty', playerIds: [] }))
           saveSettings({ ...getSettings(), shareId: null, shareAdminKey: null, shareSync: false, shareLastSync: null })
@@ -2587,15 +2592,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ok) return
         if (btnId === 'dlg-clear-matches' || btnId === 'dlg-clear-all') {
           clearMatches()
-          pendingMatches = []
+          uiState.pendingMatches = []
         }
         if (btnId === 'dlg-clear-players' || btnId === 'dlg-clear-all') {
           _removeKey('mg_players')
-          checkedPlayers.clear()
+          uiState.checkedPlayers.clear()
         }
         if (btnId === 'dlg-clear-tables' || btnId === 'dlg-clear-all') {
           _removeKey('mg_tables')
-          selectedTables = {}
+          uiState.selectedTables = {}
         }
         if (btnId === 'dlg-clear-all') {
           _removeKey('mg_objects')
@@ -2877,25 +2882,25 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (b.id === 'dlg-tm-members') dlgEditMembers(id)
         else if (b.id === 'dlg-tm-delete') {
           dlgConfirm(`<strong>${esc(tbl.label)}</strong> を削除しますか？`)
-            .then(ok => { if (ok) { deleteTable(id); delete selectedTables[id]; scheduleRender() } })
+            .then(ok => { if (ok) { deleteTable(id); delete uiState.selectedTables[id]; scheduleRender() } })
         }
       }
       document.getElementById('dlg-body').addEventListener('click', handler)
     } else if (action === 'confirm-one') {
-      const m = pendingMatches.find(x => x.tableId === id)
+      const m = uiState.pendingMatches.find(x => x.tableId === id)
       if (m) {
         saveUndoSnapshot('マッチング確定')
         addMatch(m.tableId, m.playerIds)
         updateTable(m.tableId, { status: 'playing', playerIds: m.playerIds })
         m.playerIds.forEach(pid => updatePlayer(pid, { status: 'playing' }))
-        delete selectedTables[m.tableId]
-        pendingMatches = pendingMatches.filter(x => x.tableId !== id)
-        checkedPlayers.clear()
+        delete uiState.selectedTables[m.tableId]
+        uiState.pendingMatches = uiState.pendingMatches.filter(x => x.tableId !== id)
+        uiState.checkedPlayers.clear()
         scheduleRender()
       }
     } else if (action === 'cancel-one') {
-      pendingMatches = pendingMatches.filter(x => x.tableId !== id)
-      if (!pendingMatches.length) checkedPlayers.clear()
+      uiState.pendingMatches = uiState.pendingMatches.filter(x => x.tableId !== id)
+      if (!uiState.pendingMatches.length) uiState.checkedPlayers.clear()
       renderTables(); renderMatchingBar(); renderPlayers(); renderPlayerStats()
     } else if (action === 'finish') {
       finishTable(id)
@@ -2948,7 +2953,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (action === 'del-player') {
       const p = getPlayers().find(x => x.id === id)
       dlgConfirm(`<strong>${esc(p?.name ?? '')}</strong> を削除しますか？`)
-        .then(ok => { if (ok) { checkedPlayers.delete(id); deletePlayer(id); scheduleRender() } })
+        .then(ok => { if (ok) { uiState.checkedPlayers.delete(id); deletePlayer(id); scheduleRender() } })
     }
   })
 
@@ -2970,12 +2975,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const [from, to] = i1 < i2 ? [i1, i2] : [i2, i1]
       const target  = chk.checked  // チェックボックスは既にブラウザが反転済み
       for (let i = from; i <= to; i++) {
-        if (target) checkedPlayers.add(ids[i])
-        else        checkedPlayers.delete(ids[i])
+        if (target) uiState.checkedPlayers.add(ids[i])
+        else        uiState.checkedPlayers.delete(ids[i])
       }
     } else {
-      if (chk.checked) checkedPlayers.add(clickedId)
-      else             checkedPlayers.delete(clickedId)
+      if (chk.checked) uiState.checkedPlayers.add(clickedId)
+      else             uiState.checkedPlayers.delete(clickedId)
       lastCheckedId = clickedId
     }
 
@@ -3130,7 +3135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const active = document.getElementById('player-panel').classList.contains('check-mode')
     document.getElementById('btn-toggle-checks').style.background = active ? 'var(--accent)' : ''
     document.getElementById('btn-toggle-checks').style.color = active ? 'white' : ''
-    if (!active) { checkedPlayers.clear(); renderPlayers(); renderPlayerStats() }
+    if (!active) { uiState.checkedPlayers.clear(); renderPlayers(); renderPlayerStats() }
   })
   document.getElementById('btn-paste-close').addEventListener('click', closePasteModal)
   document.getElementById('btn-paste-cancel').addEventListener('click', closePasteModal)

@@ -127,27 +127,27 @@ describe('generateMatching', () => {
 
   it('minFill=0で1人不足 → 不成立', () => {
     // 3人で4人卓1つ、minFill=0 → minRequired=table.size=4 なので不成立
-    const result = generateMatching(P.slice(0, 3), tables4, P, [], false, 0)
+    const result = generateMatching(P.slice(0, 3), tables4, P, [])
     expect(result).toEqual([])
   })
 
   it('minFill=2で端数OK', () => {
     // 3人で4人卓、minFill=2 → 3 >= 2 なので成立
-    const result = generateMatching(P.slice(0, 3), tables4, P, [], false, 2)
+    const result = generateMatching(P.slice(0, 3), tables4, P, [], { minFill: 2 })
     expect(result).toHaveLength(1)
     expect(result[0].playerIds).toHaveLength(3)
   })
 
   it('minFill=3のちょうど', () => {
     // 3人で4人卓、minFill=3 → 3 >= 3 成立
-    const result = generateMatching(P.slice(0, 3), tables4, P, [], false, 3)
+    const result = generateMatching(P.slice(0, 3), tables4, P, [], { minFill: 3 })
     expect(result).toHaveLength(1)
     expect(result[0].playerIds).toHaveLength(3)
   })
 
   it('minFill=3の未満', () => {
     // 2人で4人卓、minFill=3 → 2 < 3 不成立
-    const result = generateMatching(P.slice(0, 2), tables4, P, [], false, 3)
+    const result = generateMatching(P.slice(0, 2), tables4, P, [], { minFill: 3 })
     expect(result).toEqual([])
   })
 
@@ -192,7 +192,7 @@ describe('generateMatching', () => {
 
   it('shuffle=true動作', () => {
     // shuffle=trueの場合でも結果が返ること（順序は不定だが有効な割り当て）
-    const result = generateMatching(P, tables4x2, P, [], true)
+    const result = generateMatching(P, tables4x2, P, [], { shuffle: true })
     expect(result).toHaveLength(2)
     const allIds = result.flatMap(a => a.playerIds)
     expect(allIds).toHaveLength(8)
@@ -237,7 +237,7 @@ describe('generateMatching', () => {
   it('複数テーブルで余りが出る場合', () => {
     // 6人、4人卓×2、minFill=2 → 1卓満席(4人) + 1卓端数(2人)
     const pool = P.slice(0, 6)
-    const result = generateMatching(pool, tables4x2, P, [], false, 2)
+    const result = generateMatching(pool, tables4x2, P, [], { minFill: 2 })
     expect(result).toHaveLength(2)
     expect(result[0].playerIds).toHaveLength(4)
     expect(result[1].playerIds).toHaveLength(2)
@@ -474,7 +474,7 @@ describe('generateMatching with shortPlayerIds', () => {
     // p1,p2が前回ショートだった
     const tables = [{ id: 't1', size: 4 }, { id: 't2', size: 4 }]
     const shortIds = new Set(['p1', 'p2'])
-    const result = generateMatching(P.slice(0, 6), tables, P, [], false, 2, null, shortIds)
+    const result = generateMatching(P.slice(0, 6), tables, P, [], { minFill: 2, shortPlayerIds: shortIds })
     expect(result).toHaveLength(2)
     // 端数卓（2人）にp1,p2が含まれないことを確認
     const partialTable = result.find(a => a.playerIds.length < 4)
@@ -487,7 +487,7 @@ describe('generateMatching with shortPlayerIds', () => {
 
   it('shortPlayerIds=null → 通常動作', () => {
     const tables = [{ id: 't1', size: 4 }]
-    const result = generateMatching(P.slice(0, 4), tables, P, [], false, 0, null, null)
+    const result = generateMatching(P.slice(0, 4), tables, P, [])
     expect(result).toHaveLength(1)
     expect(result[0].playerIds).toHaveLength(4)
   })

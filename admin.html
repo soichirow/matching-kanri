@@ -1124,7 +1124,8 @@ const getShortMatchPlayerIds = (matches, tables) => {
   return ids
 }
 
-const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0, vpMap = null, shortPlayerIds = null) => {
+const generateMatching = (waitingPlayers, emptyTables, allPlayers, matches, options = {}) => {
+  const { shuffle = false, minFill = 0, vpMap = null, shortPlayerIds = null } = options
   if (!waitingPlayers.length || !emptyTables.length) return []
   let pool = shuffle ? shuffleArray(waitingPlayers) : [...waitingPlayers]
 
@@ -1889,7 +1890,7 @@ const doGenerateMatching = (shuffle = false) => {
     for (const key of keys) {
       const pool = bracketMap[key]
       if (!remainingTables.length) break
-      const result = generateMatching(pool, remainingTables, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
+      const result = generateMatching(pool, remainingTables, allPlayers, matches, { shuffle: shouldShuffle, minFill, vpMap, shortPlayerIds })
       result.forEach(m => {
         uiState.pendingMatches.push(m)
         const idx = remainingTables.findIndex(t => t.id === m.tableId)
@@ -1897,7 +1898,7 @@ const doGenerateMatching = (shuffle = false) => {
       })
     }
   } else {
-    uiState.pendingMatches = generateMatching(waiting, targets, allPlayers, matches, shouldShuffle, minFill, vpMap, shortPlayerIds)
+    uiState.pendingMatches = generateMatching(waiting, targets, allPlayers, matches, { shuffle: shouldShuffle, minFill, vpMap, shortPlayerIds })
   }
 
   if (!uiState.pendingMatches.length) { toast('プレイヤーが足りないか、テーブルサイズが大きすぎます'); return }

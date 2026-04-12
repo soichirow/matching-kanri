@@ -87,7 +87,8 @@ export function getShortMatchPlayerIds(matches, tables) {
 
 // ── マッチング生成 ──
 
-export function generateMatching(waitingPlayers, emptyTables, allPlayers, matches, shuffle = false, minFill = 0, vpMap = null, shortPlayerIds = null) {
+export function generateMatching(waitingPlayers, emptyTables, allPlayers, matches, options = {}) {
+  const { shuffle = false, minFill = 0, vpMap = null, shortPlayerIds = null } = options
   if (!waitingPlayers.length || !emptyTables.length) return []
   let pool = shuffle ? shuffleArray(waitingPlayers) : [...waitingPlayers]
 

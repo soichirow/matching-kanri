@@ -623,20 +623,61 @@ const renderTables = () => {
         ${statusHtml}
       </div>
       <div class="card-players">${playersHtml}</div>
-      ${selfScoreEnabled && isPlaying && selfPlayer && seated.some(p => p.id === selfPlayer.id) ? (() => {
+      ${isPlaying && selfPlayer && seated.some(p => p.id === selfPlayer.id) ? (() => {
         const matchData = (tournamentData.matches || []).slice().reverse().find(m => m.tableId === t.id)
-        const savedScore = localStorage.getItem('view_score_' + matchData?.id + '_' + selfPlayer.id)
-        return `<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--text-dim);">自分のスコア:</span>
-          <input type="number" class="self-score-input" data-match-id="${matchData?.id || ''}" data-pid="${selfPlayer.id}"
-            value="${savedScore ?? ''}" inputmode="numeric"
-            style="width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--warning);font-weight:700;text-align:center;">
-          <span style="font-size:11px;color:var(--text-dim);">pt</span>
+        if (!matchData) return ''
+        const reports = matchData.finishedReports || []
+        const alreadyReported = reports.includes(selfPlayer.id)
+        const reportCount = reports.length
+        const savedScore = localStorage.getItem('view_score_' + matchData.id + '_' + selfPlayer.id)
+
+        let scoreHtml = ''
+        if (selfScoreEnabled) {
+          scoreHtml = `<div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text-dim);">自分のスコア:</span>
+            <input type="number" class="self-score-input" data-match-id="${matchData.id}" data-pid="${selfPlayer.id}"
+              value="${savedScore ?? ''}" inputmode="numeric"
+              style="width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--warning);font-weight:700;text-align:center;">
+            <span style="font-size:11px;color:var(--text-dim);">pt</span>
+          </div>`
+        }
+
+        const finishHtml = alreadyReported
+          ? `<div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;color:var(--success);font-weight:600;">終了報告済み</span>
+              <span style="font-size:11px;color:var(--text-dim);">(${reportCount}人が報告)</span>
+            </div>`
+          : `<button class="report-finish-btn" data-match-id="${matchData.id}" data-pid="${selfPlayer.id}"
+              style="padding:8px 16px;font-size:14px;font-weight:700;background:var(--accent2);color:white;border:none;border-radius:8px;cursor:pointer;">
+              対戦終了を報告
+            </button>`
+
+        return `<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+          ${scoreHtml}${finishHtml}
         </div>`
       })() : ''}
     </div>`
   })
   panel.innerHTML = html
+
+  // 対戦終了報告ボタン
+  panel.querySelectorAll('.report-finish-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true
+      btn.textContent = '送信中...'
+      try {
+        const { data, error } = await supabase.rpc('report_finished', {
+          p_tournament_id: tournamentId,
+          p_match_id: btn.dataset.matchId,
+          p_player_id: btn.dataset.pid,
+        })
+        if (error) { toast('送信に失敗しました'); btn.disabled = false; btn.textContent = '対戦終了を報告'; return }
+        toast(`終了を報告しました（${data.reported}/${data.total}人）`)
+        // リフレッシュして表示更新
+        await fetchData()
+      } catch (e) { toast('送信に失敗しました'); btn.disabled = false; btn.textContent = '対戦終了を報告' }
+    })
+  })
 
   // セルフスコア入力 → RPC経由でサーバーに送信
   if (selfScoreEnabled) {

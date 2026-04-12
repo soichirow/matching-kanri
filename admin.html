@@ -1615,8 +1615,16 @@ const refreshTableCard = (el, t) => {
     ? `<button class="btn btn-confirm btn-sm" data-action="confirm-one" data-id="${t.id}">確定</button>
        <button class="btn btn-regen  btn-sm" data-action="cancel-one"  data-id="${t.id}">取消</button>`
     : t.status === 'playing'
-      ? `<button class="btn-finish"  data-action="finish"  data-id="${t.id}">対戦終了</button>
+      ? (() => {
+          const reportCount = currentMatch?.finishedReports?.length || 0
+          const reportBadge = reportCount >= 2
+            ? `<span style="font-size:11px;font-weight:700;color:var(--warning);background:rgba(249,168,37,0.15);padding:2px 8px;border-radius:10px;">終了報告 ${reportCount}人</span>`
+            : reportCount === 1
+              ? `<span style="font-size:11px;color:var(--text-dim);">終了報告 1人</span>`
+              : ''
+          return `${reportBadge}<button class="btn-finish" data-action="finish" data-id="${t.id}">対戦終了</button>
          <button class="btn-disband" data-action="disband" data-id="${t.id}">解散</button>`
+        })()
       : `<label class="select-check"><input type="checkbox" data-action="select" data-id="${t.id}" ${sel ? 'checked' : ''}> 選択</label>`
 
   el.innerHTML = `

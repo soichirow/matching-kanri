@@ -1,12 +1,16 @@
 /**
  * matching.js — マッチングアルゴリズム
  *
- * スコアベースの貪欲法:
- *   同グループペア         +5点 (ペナルティ)
- *   過去に対戦済みペア     +(対戦回数 × 10)点
- *   点数差ペナルティ       +(差 / 5)点 (vpMap指定時)
- *   スコアが低い組み合わせを優先する
+ * スコアベースの貪欲法でマッチングを生成する。
+ * ペナルティスコアが低い組み合わせを優先する。
  */
+
+// ── 定数 ──
+export const REPEAT_PENALTY       = 10   // 対戦済みペア1回あたりのペナルティ
+export const GROUP_PENALTY        = 5    // 同グループペアのペナルティ
+export const VP_DIFF_DIVISOR      = 5    // VP差ペナルティの除数
+export const EXHAUSTIVE_THRESHOLD = 20   // 全探索/貪欲法の人数閾値
+export const PERM_TABLE_THRESHOLD = 8    // 全順列/貪欲法のテーブル数閾値
 
 // ── ペアカウントMap・プレイヤーMap事前構築 (O(1) ルックアップ) ──
 
@@ -47,13 +51,13 @@ export function pairPenalty(a, b, players, matches, vpMap = null, _cache = null)
     pa = players.find(p => p.id === a)
     pb = players.find(p => p.id === b)
   }
-  const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? 5 : 0
+  const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? GROUP_PENALTY : 0
   let vpPen = 0
   if (vpMap) {
     const diff = Math.abs((vpMap[a] ?? 0) - (vpMap[b] ?? 0))
-    vpPen = Math.floor(diff / 5)
+    vpPen = Math.floor(diff / VP_DIFF_DIVISOR)
   }
-  return count * 10 + groupPen + vpPen
+  return count * REPEAT_PENALTY + groupPen + vpPen
 }
 
 export function groupPenalty(playerIds, players, matches, vpMap = null, _cache = null) {
@@ -140,7 +144,7 @@ export function optimizeTableAssignment(assignments, matches) {
   const groups   = assignments.map(a => a.playerIds)
 
   // 9テーブル以上は greedy fallback（9! = 362,880 は重い）
-  if (tableIds.length > 8) {
+  if (tableIds.length > PERM_TABLE_THRESHOLD) {
     // 各グループに最も相性の良いテーブルを貪欲に割り当て
     const usedTables = new Set()
     const result = []
@@ -193,7 +197,7 @@ function findBestGroup(players, size, allPlayers, matches, vpMap = null, _cache 
   if (players.length < size) return null
   const ids = players.map(p => p.id)
 
-  if (ids.length <= 20) {
+  if (ids.length <= EXHAUSTIVE_THRESHOLD) {
     let best = null, bestScore = Infinity
     combinations(ids, size).forEach(combo => {
       const score = groupPenalty(combo, allPlayers, matches, vpMap, _cache)

@@ -783,6 +783,19 @@ body {
 
 <script>
 // ════════════════════════════════════════════════════════
+// 定数 — マジックナンバーに名前をつける
+// ════════════════════════════════════════════════════════
+const TOAST_DURATION_MS   = 2200   // トースト通知の表示時間
+const MAX_UNDO            = 30     // 元に戻す操作の最大履歴数
+const ROUND_GAP_MS        = 5000   // ラウンド区切り判定の閾値(ms)
+const SYNC_DEBOUNCE_MS    = 2000   // Supabase同期のデバウンス時間
+const TIMER_WARN_MS       = 300000 // タイマー黄色表示の閾値(5分)
+const TIMER_DANGER_MS     = 60000  // タイマー赤色表示の閾値(1分)
+const TABLE_GRID_X        = 260    // テーブル初期配置の横間隔(px)
+const TABLE_GRID_Y        = 260    // テーブル初期配置の縦間隔(px)
+const TABLE_OFFSET        = 40     // テーブル初期配置の左上オフセット(px)
+
+// ════════════════════════════════════════════════════════
 // store — localStorage データ永続化
 // ════════════════════════════════════════════════════════
 const KEYS = { PLAYERS: 'mg_players', TABLES: 'mg_tables', MATCHES: 'mg_matches' }
@@ -835,8 +848,8 @@ const addTable = (label, size = 4) => {
   const t = {
     id: generateId(), label, size,
     status: 'empty', playerIds: [],
-    x: 40 + (tables.length % 5) * 260,
-    y: 40 + Math.floor(tables.length / 5) * 260
+    x: TABLE_OFFSET + (tables.length % 5) * TABLE_GRID_X,
+    y: TABLE_OFFSET + Math.floor(tables.length / 5) * TABLE_GRID_Y
   }
   tables.push(t)
   _save(KEYS.TABLES, tables)
@@ -950,7 +963,7 @@ const _syncDebounce = () => {
   const s = getSettings()
   if (!s.shareId || s.shareSync === false || !_supabase) return
   clearTimeout(_syncTimer)
-  _syncTimer = setTimeout(() => _syncNow(), 2000)
+  _syncTimer = setTimeout(() => _syncNow(), SYNC_DEBOUNCE_MS)
 }
 
 let _syncing = false
@@ -978,6 +991,11 @@ const _syncNow = async () => {
 // ════════════════════════════════════════════════════════
 // matching — マッチングアルゴリズム
 // ════════════════════════════════════════════════════════
+const REPEAT_PENALTY       = 10    // 対戦済みペア1回あたりのペナルティ
+const GROUP_PENALTY        = 5     // 同グループペアのペナルティ
+const VP_DIFF_DIVISOR      = 5     // VP差ペナルティの除数
+const EXHAUSTIVE_THRESHOLD = 20    // 全探索/貪欲法の人数閾値
+const PERM_TABLE_THRESHOLD = 8     // 全順列/貪欲法のテーブル数閾値
 
 // ペアカウントMap・プレイヤーMapを事前構築し O(1) ルックアップする
 const buildPairCountMap = matches => {
@@ -1013,13 +1031,13 @@ const pairPenalty = (a, b, players, matches, vpMap = null, _cache = null) => {
     pa = players.find(p => p.id === a)
     pb = players.find(p => p.id === b)
   }
-  const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? 5 : 0
+  const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? GROUP_PENALTY : 0
   let vpPen = 0
   if (vpMap) {
     const diff = Math.abs((vpMap[a] ?? 0) - (vpMap[b] ?? 0))
-    vpPen = Math.floor(diff / 5)
+    vpPen = Math.floor(diff / VP_DIFF_DIVISOR)
   }
-  return count * 10 + groupPen + vpPen
+  return count * REPEAT_PENALTY + groupPen + vpPen
 }
 
 const groupPenalty = (playerIds, players, matches, vpMap = null, _cache = null) => {
@@ -1053,7 +1071,7 @@ const findBestGroup = (players, size, allPlayers, matches, vpMap = null, _cache 
   if (players.length < size) return null
   const ids = players.map(p => p.id)
 
-  if (ids.length <= 20) {
+  if (ids.length <= EXHAUSTIVE_THRESHOLD) {
     let best = null, bestScore = Infinity
     combinations(ids, size).forEach(combo => {
       const score = groupPenalty(combo, allPlayers, matches, vpMap, _cache)
@@ -1161,7 +1179,7 @@ const optimizeTableAssignment = (assignments, matches) => {
   const groups   = assignments.map(a => a.playerIds)
 
   // 9テーブル以上は greedy fallback（9! = 362,880 は重い）
-  if (tableIds.length > 8) {
+  if (tableIds.length > PERM_TABLE_THRESHOLD) {
     // 各グループに最も相性の良いテーブルを貪欲に割り当て
     const usedTables = new Set()
     const result = []
@@ -1282,7 +1300,7 @@ const toast = msg => {
   el.textContent = msg
   el.classList.add('show')
   clearTimeout(el._t)
-  el._t = setTimeout(() => el.classList.remove('show'), 2200)
+  el._t = setTimeout(() => el.classList.remove('show'), TOAST_DURATION_MS)
 }
 
 let pendingMatches  = []
@@ -1298,7 +1316,7 @@ const saveUndoSnapshot = desc => {
     tables:  JSON.stringify(getTables()),
     matches: JSON.stringify(getMatches()),
   })
-  if (UNDO_STACK.length > 30) UNDO_STACK.shift()
+  if (UNDO_STACK.length > MAX_UNDO) UNDO_STACK.shift()
 }
 
 const undo = () => {
@@ -1355,7 +1373,7 @@ const countRounds = () => {
   if (!matches.length) return 0
   let rounds = 1
   for (let i = 1; i < matches.length; i++) {
-    if (matches[i].timestamp - matches[i - 1].timestamp > 5000) rounds++
+    if (matches[i].timestamp - matches[i - 1].timestamp > ROUND_GAP_MS) rounds++
   }
   return rounds
 }
@@ -1655,9 +1673,9 @@ const _updateTimer = () => {
     el.textContent = '00:00'
     el.style.color = 'var(--danger)'
     el.style.animation = 'none'
-  } else if (remaining < 60000) {
+  } else if (remaining < TIMER_DANGER_MS) {
     el.style.color = 'var(--danger)'
-  } else if (remaining < 300000) {
+  } else if (remaining < TIMER_WARN_MS) {
     el.style.color = 'var(--warning)'
   } else {
     el.style.color = 'var(--success)'

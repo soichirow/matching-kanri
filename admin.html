@@ -220,7 +220,7 @@ body {
 .status-btn.s-left     { color: var(--text-dim); border-color: var(--border);   background: transparent; }
 .status-btn:hover { filter: brightness(1.2); }
 
-.match-chk { display: none; }
+.match-chk { display: none; width: 20px; height: 20px; }
 .check-mode .match-chk { display: inline; }
 .player-item.match-checked {
   outline: 1px solid var(--accent);
@@ -314,7 +314,7 @@ body {
 .table-label { flex: 1; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .table-size  { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
 
-.table-actions { display: flex; gap: 2px; }
+.table-actions { display: flex; gap: 6px; }
 .table-actions button {
   width: 28px; height: 28px; border: none; background: transparent;
   color: var(--text-dim); cursor: pointer; border-radius: 4px;
@@ -429,7 +429,7 @@ body {
 
 .dlg-pills { display:flex; gap:6px; flex-wrap:wrap; }
 .dlg-pill {
-  padding: 5px 13px; border-radius: 20px; border: 1px solid var(--border);
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border); min-height: 34px;
   background: var(--surface2); color: var(--text-dim); font-size: 13px;
   cursor: pointer; font-weight: 600; transition: background .1s, color .1s, border-color .1s;
 }
@@ -440,7 +440,7 @@ body {
 .dlg-msg strong { color: var(--accent2); }
 
 .dlg-footer {
-  display:flex; justify-content:flex-end; gap:8px;
+  display:flex; justify-content:flex-end; gap:6px; flex-wrap: wrap;
   padding: 12px 18px 14px; border-top: 1px solid var(--border);
 }
 
@@ -648,13 +648,15 @@ body {
     z-index: 100; box-shadow: 0 -2px 12px var(--shadow-strong);
   }
   .matching-bar-inner { padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
-  .matching-bar .btn { min-height: 40px; padding: 8px 14px; }
+  .matching-bar .btn { min-height: 44px; padding: 8px 14px; white-space: nowrap; }
+  .player-group-sep { font-size: 11px; }
+  .score-unit { font-size: 12px; }
   /* マッチングバー分の下余白 */
   .app-body { padding-bottom: 70px; }
 
   .player-item { padding: 8px 8px; }
   .group-badge, .bracket-badge { min-width: 20px; text-align: center; }
-  .status-btn { min-height: 34px; padding: 6px 12px; }
+  .status-btn { min-height: 44px; padding: 8px 14px; font-size: 12px; }
   .delete-btn { width: 44px; height: 44px; font-size: 16px; }
   .panel-tool-btn { min-width: 44px; min-height: 44px; }
   .table-actions button { min-width: 44px; min-height: 44px; }

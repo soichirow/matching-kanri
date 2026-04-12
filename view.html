@@ -638,14 +638,32 @@ const renderTables = () => {
   })
   panel.innerHTML = html
 
-  // セルフスコア入力のイベント委譲
+  // セルフスコア入力 → RPC経由でサーバーに送信
   if (selfScoreEnabled) {
+    let _scoreTimer = null
     panel.querySelectorAll('.self-score-input').forEach(inp => {
       inp.addEventListener('input', () => {
         const val = inp.value.trim()
-        if (inp.dataset.matchId && inp.dataset.pid) {
-          localStorage.setItem('view_score_' + inp.dataset.matchId + '_' + inp.dataset.pid, val)
-        }
+        const matchId = inp.dataset.matchId
+        const pid = inp.dataset.pid
+        if (!matchId || !pid) return
+        localStorage.setItem('view_score_' + matchId + '_' + pid, val)
+        // デバウンスしてRPC呼び出し
+        clearTimeout(_scoreTimer)
+        _scoreTimer = setTimeout(async () => {
+          const num = parseFloat(val)
+          if (val === '' || isNaN(num)) return
+          try {
+            const { error } = await supabase.rpc('submit_score', {
+              p_tournament_id: tournamentId,
+              p_match_id: matchId,
+              p_player_id: pid,
+              p_score: num,
+            })
+            if (error) { console.error('Score submit error:', error) }
+            else { toast('スコアを送信しました') }
+          } catch (e) { console.error('Score submit error:', e) }
+        }, 800)
       })
     })
   }

@@ -1406,18 +1406,18 @@ const renderPlayerStats = () => {
   const el = document.getElementById('player-stats')
   if (!el) return
   const ps = getPlayers()
-  const s_ = getSettings()
-  const c  = s => ps.filter(p => p.status === s).length
+  const settings = getSettings()
+  const countByStatus = s => ps.filter(p => p.status === s).length
   const excluded = ps.filter(p => isExcludedStatus(p.status)).length
-  const round = s_.showRound ? countRounds() : 0
-  el.innerHTML = `${round ? `<span style="color:var(--accent)">R${round}</span> ` : ''}<span style="color:var(--accent2)">待機${c('waiting')}</span> <span style="color:var(--success)">対戦${c('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
+  const round = settings.showRound ? countRounds() : 0
+  el.innerHTML = `${round ? `<span style="color:var(--accent)">R${round}</span> ` : ''}<span style="color:var(--accent2)">待機${countByStatus('waiting')}</span> <span style="color:var(--success)">対戦${countByStatus('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
   // ヘッダータイトル更新
   const title = document.getElementById('header-title')
-  if (title) title.textContent = s_.tournamentName || 'マッチング管理'
+  if (title) title.textContent = settings.tournamentName || 'マッチング管理'
 }
 
 const STATUS_ORDER = { playing: 0, waiting: 1, excluded: 2, break: 2, left: 2 }
-// uiState.checkedPlayers は uiState.uiState.checkedPlayers に統合
+// checkedPlayers は uiState.checkedPlayers に統合済み
 
 const renderPlayers = () => {
   const list = document.getElementById('player-list')
@@ -1741,9 +1741,9 @@ const renderMatchingBar = () => {
   if (finishAllBtn) finishAllBtn.style.display = (!hasPending && hasPlaying) ? '' : 'none'
   // タイマー表示
   const timerEl = document.getElementById('round-timer')
-  const ts = getSettings()
+  const settings = getSettings()
   if (timerEl) {
-    if (ts.enableTimer && ts.timerEndAt && hasPlaying) {
+    if (settings.enableTimer && settings.timerEndAt && hasPlaying) {
       timerEl.style.display = ''
       _updateTimer()
     } else {
@@ -1920,9 +1920,9 @@ const doConfirmMatching = () => {
   uiState.pendingMatches = []
   uiState.checkedPlayers.clear()
   // タイマー開始
-  const ts = getSettings()
-  if (ts.enableTimer && ts.timerMinutes) {
-    saveSettings({ ...getSettings(), timerEndAt: Date.now() + ts.timerMinutes * 60000 })
+  const settings = getSettings()
+  if (settings.enableTimer && settings.timerMinutes) {
+    saveSettings({ ...settings, timerEndAt: Date.now() + settings.timerMinutes * 60000 })
   }
   scheduleRender()
 }

@@ -7,6 +7,10 @@
  *   Match   { id, tableId, playerIds: string[], timestamp, scores: {[pid]:number}|null }
  */
 
+const TABLE_OFFSET = 40
+const TABLE_GRID_X = 260
+const TABLE_GRID_Y = 260
+
 const KEYS = {
   PLAYERS: 'mg_players',
   TABLES:  'mg_tables',
@@ -87,8 +91,8 @@ export function addTable(label, size = 4) {
     size,
     status: 'empty',
     playerIds: [],
-    x: 40 + (tables.length % 5) * 260,
-    y: 40 + Math.floor(tables.length / 5) * 260,
+    x: TABLE_OFFSET + (tables.length % 5) * TABLE_GRID_X,
+    y: TABLE_OFFSET + Math.floor(tables.length / 5) * TABLE_GRID_Y,
   }
   tables.push(table)
   save(KEYS.TABLES, tables)

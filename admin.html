@@ -1316,6 +1316,11 @@ const toast = msg => {
   el._t = setTimeout(() => el.classList.remove('show'), TOAST_DURATION_MS)
 }
 
+const applyTheme = theme => {
+  if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light')
+  else document.documentElement.removeAttribute('data-theme')
+}
+
 let pendingMatches  = []
 let selectedTables  = {}
 
@@ -2265,6 +2270,29 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
+  // ── 設定ダイアログ ヘルパー ─────────────────────────────
+  const readSettingsFromDlg = () => ({
+    tournamentName: document.getElementById('dlg-tournament-name')?.value.trim() || '',
+    minFill: (() => { const v = parseInt(document.getElementById('dlg-min-fill')?.value ?? '0', 10); return isNaN(v) ? 0 : Math.max(0, v) })(),
+    showRound: !!document.getElementById('dlg-show-round')?.checked,
+    enableBracket: !!document.getElementById('dlg-enable-bracket')?.checked,
+    avoidShort: !!document.getElementById('dlg-avoid-short')?.checked,
+    enableVP: !!document.getElementById('dlg-enable-vp')?.checked,
+    vpMatching: !!document.getElementById('dlg-enable-vp')?.checked && !!document.getElementById('dlg-vp-matching')?.checked,
+    enableTimer: !!document.getElementById('dlg-enable-timer')?.checked,
+    timerMinutes: Math.max(1, parseInt(document.getElementById('dlg-timer-minutes')?.value ?? '50', 10)) || 50,
+    enableCheckin: !!document.getElementById('dlg-enable-checkin')?.checked,
+    enableSelfScore: !!document.getElementById('dlg-enable-self-score')?.checked,
+    theme: document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark',
+  })
+
+  const applySettingsFromDlg = values => {
+    saveSettings({ ...getSettings(), ...values })
+    applyTheme(values.theme)
+    scheduleRender()
+    toast('設定を保存しました')
+  }
+
   // 設定ダイアログ
   const dlgSettings = () => {
     const s = getSettings()
@@ -2426,22 +2454,7 @@ document.addEventListener('DOMContentLoaded', () => {
        <button class="btn btn-ok-add"   id="dlg-ok">保存</button>`
     ).then(ok => {
       if (!ok) return
-      const tournamentName = document.getElementById('dlg-tournament-name')?.value.trim() || ''
-      const v = parseInt(document.getElementById('dlg-min-fill')?.value ?? '0', 10)
-      const showRound = !!document.getElementById('dlg-show-round')?.checked
-      const enableBracket = !!document.getElementById('dlg-enable-bracket')?.checked
-      const avoidShort = !!document.getElementById('dlg-avoid-short')?.checked
-      const enableVP = !!document.getElementById('dlg-enable-vp')?.checked
-      const vpMatching = enableVP && !!document.getElementById('dlg-vp-matching')?.checked
-      const enableTimer = !!document.getElementById('dlg-enable-timer')?.checked
-      const timerMinutes = Math.max(1, parseInt(document.getElementById('dlg-timer-minutes')?.value ?? '50', 10)) || 50
-      const enableCheckin = !!document.getElementById('dlg-enable-checkin')?.checked
-      const enableSelfScore = !!document.getElementById('dlg-enable-self-score')?.checked
-      const theme = document.querySelector('#dlg-theme-pills .dlg-pill.active')?.dataset.val || 'dark'
-      saveSettings({ ...getSettings(), tournamentName, minFill: isNaN(v) ? 0 : Math.max(0, v), showRound, enableBracket, avoidShort, enableVP, vpMatching, enableTimer, timerMinutes, enableCheckin, enableSelfScore, theme })
-      applyTheme(theme)
-      scheduleRender()
-      toast('設定を保存しました')
+      applySettingsFromDlg(readSettingsFromDlg())
     })
   }
 
@@ -3266,13 +3279,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedWidth) panel.style.width = `${savedWidth}px`
 
   // ── テーマ切替 ──────────────────────────────────────────
-  const applyTheme = theme => {
-    if (theme === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light')
-    } else {
-      document.documentElement.removeAttribute('data-theme')
-    }
-  }
   applyTheme(getSettings().theme || 'dark')
 
   render()

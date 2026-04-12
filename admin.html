@@ -82,7 +82,7 @@ body {
 
 .header-title {
   font-size: 16px; font-weight: 800; color: var(--text); white-space: nowrap;
-  letter-spacing: 0.03em; margin-right: 16px;
+  letter-spacing: 0.03em; margin-right: 16px; text-decoration: none;
 }
 @media (max-width: 768px) { .header-title { display: none; } }
 
@@ -323,8 +323,13 @@ body {
 .table-actions button:hover { background: var(--surface2); color: var(--text); }
 
 .table-players { padding: 8px 10px; }
-.table-player  { font-size: 15px; padding: 3px 0; font-weight: 500; word-break: break-all; }
+.table-player  { font-size: 15px; padding: 3px 0; font-weight: 500; word-break: break-all; display: flex; align-items: center; gap: 4px; }
+.table-player .tp-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.table-player .tp-score { margin-left: auto; display: flex; align-items: center; gap: 2px; }
 .table-player.empty-slot { color: var(--text-dim); font-weight: 400; font-size: 13px; opacity: 0.5; }
+
+.report-badge { font-size: 11px; color: var(--text-dim); }
+.report-badge.alert { font-weight: 700; color: var(--warning); background: rgba(249,168,37,0.15); padding: 2px 8px; border-radius: 10px; }
 
 .table-footer {
   padding: 6px 10px; border-top: 1px solid var(--border);
@@ -361,6 +366,11 @@ body {
   flex-wrap: wrap;
 }
 #match-preview { display: flex; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+.round-timer {
+  display: none; font-size: 18px; font-weight: 800;
+  font-variant-numeric: tabular-nums; color: var(--warning);
+  cursor: pointer; white-space: nowrap;
+}
 
 .match-preview-item {
   background: var(--surface2); border: 1px solid var(--border);
@@ -379,6 +389,7 @@ body {
 
 .btn-danger   { background: var(--danger);  color: white; }
 .btn-monitor  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-icon     { padding: 6px 10px; }
 .btn-match    { background: var(--accent);  color: white; font-size: 15px; padding: 10px 22px; font-weight: 700; border-radius: 10px; }
 .btn-regen    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-confirm  { background: var(--success); color: #111; font-size: 15px; padding: 10px 22px; font-weight: 700; border-radius: 10px; }
@@ -680,15 +691,15 @@ body {
 <body>
 <div id="app">
   <header class="app-header">
-    <a href="index.html" class="header-title" id="header-title" style="text-decoration:none;color:inherit;">マッチング管理</a>
+    <a href="index.html" class="header-title" id="header-title">マッチング管理</a>
     <div class="header-actions">
       <button class="panel-add-btn" id="btn-add-tables">＋テーブル</button>
       <button class="panel-add-btn" id="btn-add-players">＋プレイヤー</button>
       <button class="panel-tool-btn" id="btn-open-paste" title="Excelから一括入力" aria-label="Excelから一括入力"><i data-lucide="clipboard-list"></i></button>
       <span style="flex:1;"></span>
-      <button id="btn-standings"     class="btn btn-monitor" title="順位表" aria-label="順位表" style="padding:6px 10px;"><i data-lucide="trophy"></i></button>
-      <button id="btn-help"          class="btn btn-monitor" title="ヘルプ" aria-label="ヘルプ" style="padding:6px 10px;"><i data-lucide="circle-help"></i></button>
-      <button id="btn-settings"      class="btn btn-monitor" title="設定" aria-label="設定" style="padding:6px 10px;"><i data-lucide="settings"></i></button>
+      <button id="btn-standings"     class="btn btn-monitor btn-icon" title="順位表" aria-label="順位表"><i data-lucide="trophy"></i></button>
+      <button id="btn-help"          class="btn btn-monitor btn-icon" title="ヘルプ" aria-label="ヘルプ"><i data-lucide="circle-help"></i></button>
+      <button id="btn-settings"      class="btn btn-monitor btn-icon" title="設定" aria-label="設定"><i data-lucide="settings"></i></button>
     </div>
   </header>
 
@@ -720,13 +731,13 @@ body {
       <button id="btn-regen-match"   class="btn btn-regen"    style="display:none"><i data-lucide="refresh-cw"></i></button>
       <button id="btn-cancel-match"  class="btn btn-cancel-m" style="display:none"><i data-lucide="x"></i></button>
       <div id="match-preview"></div>
-      <span id="round-timer" style="display:none;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--warning);cursor:pointer;white-space:nowrap;" title="タイマー（クリックで設定）"></span>
+      <span id="round-timer" class="round-timer" title="タイマー（クリックで設定）"></span>
       <span style="flex:1;"></span>
       <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;" title="4人卓に3人でも配席する">
         <input type="checkbox" id="chk-assign-leftover" checked style="accent-color:var(--accent);cursor:pointer;">
         規定以下も配席
       </label>
-      <button id="btn-undo" class="btn btn-monitor" title="元に戻す" aria-label="元に戻す" style="padding:6px 10px;"><i data-lucide="undo-2"></i></button>
+      <button id="btn-undo" class="btn btn-monitor btn-icon" title="元に戻す" aria-label="元に戻す"><i data-lucide="undo-2"></i></button>
     </div>
   </footer>
   <div class="app-footer"><a href="index.html">トップページ</a> ｜ (c) そういちろう — <a href="https://x.com/black777cat" target="_blank" rel="noopener">@black777cat</a> ｜ <a href="https://github.com/soichirow/matching-kanri" target="_blank" rel="noopener">GitHub</a> ｜ <a href="https://www.amazon.jp/hz/wishlist/ls/1Z0X9ZM1D65A7?ref_=wl_share" target="_blank" rel="noopener">支援する</a> ｜ <a href="https://x.com/intent/tweet?text=%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%81%AE%E3%83%9E%E3%83%83%E3%83%81%E3%83%B3%E3%82%B0%E7%AE%A1%E7%90%86%E3%82%A2%E3%83%97%E3%83%AA%E3%80%82%E7%84%A1%E6%96%99%E3%81%A7%E4%BD%BF%E3%81%88%E3%81%BE%E3%81%99%EF%BC%81&url=https%3A%2F%2Fsoichirow.github.io%2Fmatching-kanri%2F" target="_blank" rel="noopener">Xで共有</a></div>
@@ -1614,7 +1625,7 @@ const refreshTableCard = (el, t) => {
         const grp = p?.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
         const brk = bracketOn && p?.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
         const badges = brk || grp ? `<span class="badge-wrap">${brk}${grp}</span>` : ''
-        return `<div class="table-player pending-player" style="display:flex;align-items:center;gap:4px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(p?.name ?? '?')}</span>${badges}</div>`
+        return `<div class="table-player pending-player"><span class="tp-name">${esc(p?.name ?? '?')}</span>${badges}</div>`
       }).join('')
     : seated.length
       ? seated.map(p => {
@@ -1625,7 +1636,7 @@ const refreshTableCard = (el, t) => {
           const grp = p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
           const brk = bracketOn && p.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
           const badges = brk || grp ? `<span class="badge-wrap">${brk}${grp}</span>` : ''
-          return `<div class="table-player" style="display:flex;align-items:center;gap:4px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(p.name)}</span>${badges}${vpInput ? `<span style="margin-left:auto;display:flex;align-items:center;gap:2px;">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
+          return `<div class="table-player"><span class="tp-name">${esc(p.name)}</span>${badges}${vpInput ? `<span class="tp-score">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
         }).join('')
       : Array.from({ length: t.size }, (_, i) => `<div class="table-player empty-slot">- 空席 ${i + 1}</div>`).join('')
 
@@ -1636,9 +1647,9 @@ const refreshTableCard = (el, t) => {
       ? (() => {
           const reportCount = currentMatch?.finishedReports?.length || 0
           const reportBadge = reportCount >= 2
-            ? `<span style="font-size:11px;font-weight:700;color:var(--warning);background:rgba(249,168,37,0.15);padding:2px 8px;border-radius:10px;">終了報告 ${reportCount}人</span>`
+            ? `<span class="report-badge alert">終了報告 ${reportCount}人</span>`
             : reportCount === 1
-              ? `<span style="font-size:11px;color:var(--text-dim);">終了報告 1人</span>`
+              ? `<span class="report-badge">終了報告 1人</span>`
               : ''
           return `${reportBadge}<button class="btn-finish" data-action="finish" data-id="${t.id}">対戦終了</button>
          <button class="btn-disband" data-action="disband" data-id="${t.id}">解散</button>`

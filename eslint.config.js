@@ -12,6 +12,7 @@ export default [
         localStorage: 'readonly',
         document:     'readonly',
         window:       'readonly',
+        console:      'readonly',
         MouseEvent:   'readonly',
       },
     },

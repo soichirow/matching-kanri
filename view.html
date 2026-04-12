@@ -378,6 +378,12 @@ if (!tournamentId && codeParam) {
   }, 50)
 }
 
+// ── 定数 ───────────────────────────────────
+const TOAST_DURATION_MS = 2200
+const TIMER_WARN_MS     = 300000
+const TIMER_DANGER_MS   = 60000
+const POLL_INTERVAL_MS  = 30000
+
 // ── 状態 ───────────────────────────────────
 let tournamentData = null
 let searchName = localStorage.getItem('view_search_name') || ''
@@ -390,7 +396,7 @@ const toast = msg => {
   el.textContent = msg
   el.classList.add('show')
   clearTimeout(el._t)
-  el._t = setTimeout(() => el.classList.remove('show'), 2200)
+  el._t = setTimeout(() => el.classList.remove('show'), TOAST_DURATION_MS)
 }
 
 // ── データ取得 ────────────────────────────
@@ -443,7 +449,7 @@ const subscribeRealtime = () => {
 // ── フォールバック: 30秒ポーリング ───────
 let pollTimer = null
 const startPolling = () => {
-  pollTimer = setInterval(fetchData, 30000)
+  pollTimer = setInterval(fetchData, POLL_INTERVAL_MS)
 }
 
 // ── ステータス表示 ───────────────────────
@@ -477,8 +483,8 @@ const _updateViewTimer = () => {
   el.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
   el.style.display = ''
   if (remaining <= 0) { el.style.color = 'var(--danger)' }
-  else if (remaining < 60000) { el.style.color = 'var(--danger)' }
-  else if (remaining < 300000) { el.style.color = 'var(--warning)' }
+  else if (remaining < TIMER_DANGER_MS) { el.style.color = 'var(--danger)' }
+  else if (remaining < TIMER_WARN_MS) { el.style.color = 'var(--warning)' }
   else { el.style.color = 'var(--success)' }
   if (!_viewTimerInterval) {
     _viewTimerInterval = setInterval(_updateViewTimer, 1000)

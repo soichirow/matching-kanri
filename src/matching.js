@@ -40,21 +40,21 @@ export function getPairCount(a, b, pairMap) {
 
 // ── ペナルティ計算 ──
 
-export function pairPenalty(a, b, players, matches, vpMap = null, _cache = null) {
+export function pairPenalty(pidA, pidB, players, matches, vpMap = null, _cache = null) {
   let count, pa, pb
   if (_cache) {
-    count = getPairCount(a, b, _cache.pairMap)
-    pa = _cache.playerMap.get(a)
-    pb = _cache.playerMap.get(b)
+    count = getPairCount(pidA, pidB, _cache.pairMap)
+    pa = _cache.playerMap.get(pidA)
+    pb = _cache.playerMap.get(pidB)
   } else {
-    count = matches.filter(m => m.playerIds.includes(a) && m.playerIds.includes(b)).length
-    pa = players.find(p => p.id === a)
-    pb = players.find(p => p.id === b)
+    count = matches.filter(m => m.playerIds.includes(pidA) && m.playerIds.includes(pidB)).length
+    pa = players.find(p => p.id === pidA)
+    pb = players.find(p => p.id === pidB)
   }
   const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? GROUP_PENALTY : 0
   let vpPen = 0
   if (vpMap) {
-    const diff = Math.abs((vpMap[a] ?? 0) - (vpMap[b] ?? 0))
+    const diff = Math.abs((vpMap[pidA] ?? 0) - (vpMap[pidB] ?? 0))
     vpPen = Math.floor(diff / VP_DIFF_DIVISOR)
   }
   return count * REPEAT_PENALTY + groupPen + vpPen

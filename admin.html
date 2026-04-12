@@ -796,6 +796,8 @@ body {
 // ════════════════════════════════════════════════════════
 // 定数 — マジックナンバーに名前をつける
 // ════════════════════════════════════════════════════════
+const EXCLUDED_STATUSES   = new Set(['excluded', 'break', 'left'])
+const isExcludedStatus    = s => EXCLUDED_STATUSES.has(s)
 const TOAST_DURATION_MS   = 2200   // トースト通知の表示時間
 const MAX_UNDO            = 30     // 元に戻す操作の最大履歴数
 const ROUND_GAP_MS        = 5000   // ラウンド区切り判定の閾値(ms)
@@ -815,7 +817,7 @@ const _memCache = {}
 const _load = key => {
   if (_memCache[key] !== undefined) return _memCache[key]
   try { const r = localStorage.getItem(key); const v = r ? JSON.parse(r) : []; _memCache[key] = v; return v }
-  catch { return [] }
+  catch (e) { console.error(`localStorage load error (${key}):`, e); return [] }
 }
 const _save = (key, data) => {
   _memCache[key] = data
@@ -1031,21 +1033,21 @@ const getPairCount = (a, b, pairMap) => {
   return pairMap.get(key) ?? 0
 }
 
-const pairPenalty = (a, b, players, matches, vpMap = null, _cache = null) => {
+const pairPenalty = (pidA, pidB, players, matches, vpMap = null, _cache = null) => {
   let count, pa, pb
   if (_cache) {
-    count = getPairCount(a, b, _cache.pairMap)
-    pa = _cache.playerMap.get(a)
-    pb = _cache.playerMap.get(b)
+    count = getPairCount(pidA, pidB, _cache.pairMap)
+    pa = _cache.playerMap.get(pidA)
+    pb = _cache.playerMap.get(pidB)
   } else {
-    count = matches.filter(m => m.playerIds.includes(a) && m.playerIds.includes(b)).length
-    pa = players.find(p => p.id === a)
-    pb = players.find(p => p.id === b)
+    count = matches.filter(m => m.playerIds.includes(pidA) && m.playerIds.includes(pidB)).length
+    pa = players.find(p => p.id === pidA)
+    pb = players.find(p => p.id === pidB)
   }
   const groupPen = (pa && pb && pa.group && pa.group === pb.group) ? GROUP_PENALTY : 0
   let vpPen = 0
   if (vpMap) {
-    const diff = Math.abs((vpMap[a] ?? 0) - (vpMap[b] ?? 0))
+    const diff = Math.abs((vpMap[pidA] ?? 0) - (vpMap[pidB] ?? 0))
     vpPen = Math.floor(diff / VP_DIFF_DIVISOR)
   }
   return count * REPEAT_PENALTY + groupPen + vpPen
@@ -1395,7 +1397,7 @@ const renderPlayerStats = () => {
   const ps = getPlayers()
   const s_ = getSettings()
   const c  = s => ps.filter(p => p.status === s).length
-  const excluded = ps.filter(p => ['excluded','break','left'].includes(p.status)).length
+  const excluded = ps.filter(p => isExcludedStatus(p.status)).length
   const round = s_.showRound ? countRounds() : 0
   el.innerHTML = `${round ? `<span style="color:var(--accent)">R${round}</span> ` : ''}<span style="color:var(--accent2)">待機${c('waiting')}</span> <span style="color:var(--success)">対戦${c('playing')}</span>${excluded ? ` <span style="color:var(--text-dim)">除外${excluded}</span>` : ''}`
   // ヘッダータイトル更新
@@ -1446,7 +1448,7 @@ const renderPlayers = () => {
   players.forEach(p => {
     const tbl = playerTable(p.id)
     // グループキー：playing時はテーブルID、除外系は統一、それ以外はステータス
-    const isExcluded = p.status === 'excluded' || p.status === 'break' || p.status === 'left'
+    const isExcluded = isExcludedStatus(p.status)
     const groupKey = p.status === 'playing' ? (tbl?.id ?? 'playing') : (isExcluded ? 'excluded' : p.status)
     if (groupKey !== prevGroupKey) {
       let label, dotColor
@@ -2640,7 +2642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scoreMap = buildVpMap(allMatches)
 
     const rows = allPlayers
-      .filter(p => !['excluded','break','left'].includes(p.status))
+      .filter(p => !isExcludedStatus(p.status))
       .map(p => ({
         name: p.name,
         group: p.group,

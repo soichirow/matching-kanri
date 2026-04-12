@@ -26,7 +26,8 @@ function load(key) {
     const v = raw ? JSON.parse(raw) : []
     _memCache[key] = v
     return v
-  } catch {
+  } catch (e) {
+    console.error(`localStorage load error (${key}):`, e)
     return []
   }
 }

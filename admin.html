@@ -1601,62 +1601,72 @@ const renderTables = () => {
   })
 }
 
+// ── テーブルカード描画ヘルパー ────────────────────────────
+const buildPendingPlayersHTML = (pending, players, bracketOn) =>
+  `<div class="pending-badge">仮マッチ</div>` +
+  pending.playerIds.map(id => {
+    const p = players.find(x => x.id === id)
+    const grp = p?.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
+    const brk = bracketOn && p?.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
+    const badges = brk || grp ? `<span class="badge-wrap">${brk}${grp}</span>` : ''
+    return `<div class="table-player pending-player"><span class="tp-name">${esc(p?.name ?? '?')}</span>${badges}</div>`
+  }).join('')
+
+const buildSeatedPlayersHTML = (seated, t, vpEnabled, currentMatch, bracketOn) =>
+  seated.map(p => {
+    const vpInput = (vpEnabled && t.status === 'playing' && currentMatch)
+      ? `<input type="number" class="score-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
+          value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±" inputmode="numeric">`
+      : ''
+    const grp = p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
+    const brk = bracketOn && p.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
+    const badges = brk || grp ? `<span class="badge-wrap">${brk}${grp}</span>` : ''
+    return `<div class="table-player"><span class="tp-name">${esc(p.name)}</span>${badges}${vpInput ? `<span class="tp-score">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
+  }).join('')
+
+const buildEmptySlots = size =>
+  Array.from({ length: size }, (_, i) => `<div class="table-player empty-slot">- 空席 ${i + 1}</div>`).join('')
+
+const buildTableFooterHTML = (pending, t, currentMatch, isSelected) => {
+  if (pending) {
+    return `<button class="btn btn-confirm btn-sm" data-action="confirm-one" data-id="${t.id}">確定</button>
+       <button class="btn btn-regen  btn-sm" data-action="cancel-one"  data-id="${t.id}">取消</button>`
+  }
+  if (t.status === 'playing') {
+    const reportCount = currentMatch?.finishedReports?.length || 0
+    const reportBadge = reportCount >= 2
+      ? `<span class="report-badge alert">終了報告 ${reportCount}人</span>`
+      : reportCount === 1
+        ? `<span class="report-badge">終了報告 1人</span>`
+        : ''
+    return `${reportBadge}<button class="btn-finish" data-action="finish" data-id="${t.id}">対戦終了</button>
+       <button class="btn-disband" data-action="disband" data-id="${t.id}">解散</button>`
+  }
+  return `<label class="select-check"><input type="checkbox" data-action="select" data-id="${t.id}" ${isSelected ? 'checked' : ''}> 選択</label>`
+}
+
 const refreshTableCard = (el, t) => {
   const players  = getPlayers()
   const seated   = t.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean)
   const sel      = !!selectedTables[t.id]
   const pending  = pendingMatches.find(m => m.tableId === t.id)
-  const stg = getSettings()
-  const vpEnabled = !!stg.enableVP
-  const bracketOn = !!stg.enableBracket
-
+  const settings = getSettings()
+  const vpEnabled = !!settings.enableVP
+  const bracketOn = !!settings.enableBracket
   const irregular = t.status === 'playing' && seated.length !== t.size
+
   el.className = `table-card status-${t.status}${sel ? ' selected' : ''}${pending ? ' pending' : ''}${irregular ? ' irregular' : ''}`
 
-  // VP入力用: 対戦中テーブルの直近マッチを取得
   let currentMatch = null
   if (vpEnabled && t.status === 'playing') {
-    const allMatches = getMatches()
-    currentMatch = [...allMatches].reverse().find(m => m.tableId === t.id)
+    currentMatch = [...getMatches()].reverse().find(m => m.tableId === t.id)
   }
 
   const playersHtml = pending
-    ? `<div class="pending-badge">仮マッチ</div>` +
-      pending.playerIds.map(id => {
-        const p = players.find(x => x.id === id)
-        const grp = p?.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
-        const brk = bracketOn && p?.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
-        const badges = brk || grp ? `<span class="badge-wrap">${brk}${grp}</span>` : ''
-        return `<div class="table-player pending-player"><span class="tp-name">${esc(p?.name ?? '?')}</span>${badges}</div>`
-      }).join('')
+    ? buildPendingPlayersHTML(pending, players, bracketOn)
     : seated.length
-      ? seated.map(p => {
-          const vpInput = (vpEnabled && t.status === 'playing' && currentMatch)
-            ? `<input type="number" class="score-input no-drag" data-action="vp-input" data-match-id="${currentMatch.id}" data-pid="${p.id}"
-                value="${currentMatch.scores?.[p.id] ?? ''}" placeholder="±" inputmode="numeric">`
-            : ''
-          const grp = p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''
-          const brk = bracketOn && p.bracket ? `<span class="bracket-badge">${esc(p.bracket)}</span>` : ''
-          const badges = brk || grp ? `<span class="badge-wrap">${brk}${grp}</span>` : ''
-          return `<div class="table-player"><span class="tp-name">${esc(p.name)}</span>${badges}${vpInput ? `<span class="tp-score">${vpInput}<span class="score-unit">pt</span></span>` : ''}</div>`
-        }).join('')
-      : Array.from({ length: t.size }, (_, i) => `<div class="table-player empty-slot">- 空席 ${i + 1}</div>`).join('')
-
-  const footerHtml = pending
-    ? `<button class="btn btn-confirm btn-sm" data-action="confirm-one" data-id="${t.id}">確定</button>
-       <button class="btn btn-regen  btn-sm" data-action="cancel-one"  data-id="${t.id}">取消</button>`
-    : t.status === 'playing'
-      ? (() => {
-          const reportCount = currentMatch?.finishedReports?.length || 0
-          const reportBadge = reportCount >= 2
-            ? `<span class="report-badge alert">終了報告 ${reportCount}人</span>`
-            : reportCount === 1
-              ? `<span class="report-badge">終了報告 1人</span>`
-              : ''
-          return `${reportBadge}<button class="btn-finish" data-action="finish" data-id="${t.id}">対戦終了</button>
-         <button class="btn-disband" data-action="disband" data-id="${t.id}">解散</button>`
-        })()
-      : `<label class="select-check"><input type="checkbox" data-action="select" data-id="${t.id}" ${sel ? 'checked' : ''}> 選択</label>`
+      ? buildSeatedPlayersHTML(seated, t, vpEnabled, currentMatch, bracketOn)
+      : buildEmptySlots(t.size)
 
   el.innerHTML = `
     <div class="table-header">
@@ -1667,7 +1677,7 @@ const refreshTableCard = (el, t) => {
       </div>
     </div>
     <div class="table-players">${playersHtml}</div>
-    <div class="table-footer no-drag">${footerHtml}</div>
+    <div class="table-footer no-drag">${buildTableFooterHTML(pending, t, currentMatch, sel)}</div>
   `
 }
 
